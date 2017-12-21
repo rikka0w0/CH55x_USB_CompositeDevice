@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Keil
+Listings/
+Objects/
+*.build_log.htm
+*.uvgui.*
