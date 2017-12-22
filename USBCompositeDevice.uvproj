@@ -386,6 +386,26 @@
               <FileType>1</FileType>
               <FilePath>.\CompositeKM.C</FilePath>
             </File>
+            <File>
+              <FileName>usb_hid_desc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_hid_desc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_ep0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_ep0.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_desc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_desc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_it.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_it.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
