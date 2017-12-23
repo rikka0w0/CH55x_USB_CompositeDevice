@@ -1,6 +1,6 @@
 #include "types.h"
 #include "usb_desc.h"
-#include "usb_conf.h"
+#include "usb_endp.h"
 #include "CH554.h"
 
 void NOP_Process(void) {}

@@ -46,3 +46,14 @@ code const uint8_t VendorDefDesc[] =
 		0xC0,					//End Collection(Physical)
   0xC0				//End Collection(Application)
 };
+
+code const uint8_t* USB_HID_REPDESCS[] =
+{
+		VendorDefDesc,	// Interface 0
+		KeyRepDesc,			// Interface 1
+};
+
+code const uint8_t USB_HID_REPDESCS_SIZE[] = {
+	USB_HIDREPSIZE_VENDORDEF,		// Interface 0
+	USB_HIDREPSIZE_KEYBOARD			// Interface 1
+};

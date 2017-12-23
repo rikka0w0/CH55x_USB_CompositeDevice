@@ -28,10 +28,10 @@ code const uint8_t CfgDesc[] =
 	0x02,				// Type: Configuration Descriptor
 	// Total length of this and following descriptors
 	USB_DESCSIZE_CONFIG_L, USB_DESCSIZE_CONFIG_H,	
-	0x02,				// Number of interfaces
+	USB_INTERFACES,		// Number of interfaces
 	0x01, 			// Value used to select this configuration
 	0x00,				// Index of corresponding string descriptor
-	0xA0,				// Attributes, D7 must be 1, D6 Self-powered, D5 Remote Wakeup, D4-D0=0
+	0x80,				// Attributes, D7 must be 1, D6 Self-powered, D5 Remote Wakeup, D4-D0=0
 	0x32,				// Max current drawn by device, in units of 2mA
 	
 	
@@ -55,7 +55,7 @@ code const uint8_t CfgDesc[] =
 	0x01,				// bNumDescriptors: Number of HID class descriptors to follow
 	0x22,				// bDescriptorType
 	// wItemLength: Total length of Report descriptor
-	USB_HIDREPSIZE_KEYBOARD_L, USB_HIDREPSIZE_KEYBOARD_H,
+	USB_HIDREPSIZE_KEYBOARD, 0,
 	
 	// Endpoint descriptor (Keyboard)
 	7,				// Length of the descriptor
@@ -91,7 +91,7 @@ code const uint8_t CfgDesc[] =
 	0x01,				// bNumDescriptors: Number of HID class descriptors to follow
 	0x22,				// bDescriptorType
 	// wItemLength: Total length of Report descriptor
-	USB_HIDREPSIZE_VENDORDEF_L, USB_HIDREPSIZE_VENDORDEF_H,	
+	USB_HIDREPSIZE_VENDORDEF, 0,	
 	
 	// Endpoint descriptor (Vendor-defined)	// EP2, IN
   7,					// Length of the descriptor

@@ -1,15 +1,22 @@
-#ifndef __USB_CONF_H
-#define __USB_CONF_H
+#ifndef __USB_ENDP_H
+#define __USB_ENDP_H
+
+#include "types.h"
+uint8_t USB_EP_HALT_SET(uint8_t ep);
+uint8_t USB_EP_HALT_CLEAR(uint8_t ep);
 
 // EP0
+xdata uint8_t Ep0Buffer[];
 void USB_EP0_SETUP(void);
 void USB_EP0_IN(void);
 void USB_EP0_OUT(void);
 
 // EP1
+xdata uint8_t Ep1Buffer[];
 void USB_EP1_IN(void);
 
 // EP2
+xdata uint8_t Ep2Buffer[];
 void USB_EP2_IN(void);
 void USB_EP2_OUT(void);
 
@@ -43,4 +50,4 @@ void NOP_Process(void);
 #define EP3_SETUP_Callback NOP_Process
 #define EP4_SETUP_Callback NOP_Process
 
-#endif /*__USB_CONF_H*/
+#endif /*__USB_ENDP_H*/

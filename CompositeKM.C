@@ -2,16 +2,9 @@
 #include "CH554.H"                                                      
 #include "Debug.H"
 #include "usb_desc.h"
-#include "usb_conf.h"
+#include "usb_endp.h"
 #include <string.h>
 #include <stdio.h>
-
-extern xdata uint8_t Ep0Buffer[];
-
-xdata uint8_t  Ep1Buffer[64>(MAX_PACKET_SIZE+2)?64:(MAX_PACKET_SIZE+2)] _at_ 0x000a;  //端点1 IN缓冲区,必须是偶地址
-//0x42
-xdata uint8_t  Ep2Buffer[128>(2*MAX_PACKET_SIZE+4)?128:(2*MAX_PACKET_SIZE+4)] _at_ 0x0050;  //端点2 IN缓冲区,必须是偶地址
-//0x84
 
 uint8_t Count,FLAG;
 extern UINT8 Ready;
@@ -37,33 +30,6 @@ UINT8C CustomHID_StringSerial[26] =
 /*键盘数据*/
 UINT8 HIDKey[8] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 
-/*******************************************************************************
-* Function Name  : CH554SoftReset()
-* Description    : CH554软复位
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-void CH554SoftReset( )
-{
-    SAFE_MOD = 0x55;
-    SAFE_MOD = 0xAA;
-    GLOBAL_CFG	|=bSW_RESET;
-}
-
-/*******************************************************************************
-* Function Name  : CH554USBDevWakeup()
-* Description    : CH554设备模式唤醒主机，发送K信号
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-void CH554USBDevWakeup( )
-{
-  UDEV_CTRL |= bUD_LOW_SPEED;
-  mDelaymS(2);
-  UDEV_CTRL &= ~bUD_LOW_SPEED;	
-}
 
 /*******************************************************************************
 * Function Name  : USBDeviceInit()
@@ -79,7 +45,7 @@ void USBDeviceInit()
 		//UDEV_CTRL = bUD_PD_DIS;		//Disable DP/DN pull down resistor
 	
 		//Configure Endpoint 0
-    UEP0_DMA = Ep0Buffer; // Address of Endpoint 2 buffer
+    UEP0_DMA = Ep0Buffer; // Address of Endpoint 0 buffer
 		// bUEP4_RX_EN and bUEP4_TX_EN controls both Endpoint 0 and 4, refer to table 16.3.2
 		UEP4_1_MOD &= ~(bUEP4_RX_EN | bUEP4_TX_EN);		// EP0 64-byte buffer
 		UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;		// SETUP/OUT -> ACK, IN -> NAK
@@ -112,6 +78,9 @@ void USBDeviceInit()
 	  // Connect pull up resistor | While handling interrup, reply NAK t if flag is set | Enable DMA
 	  USB_CTRL = bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;	
 	  UDEV_CTRL |= bUD_PORT_EN;	// Enable USB Port
+		
+		UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
+    UEP2_T_LEN = 0;  
 }
 /*******************************************************************************
 * Function Name  : Enp1IntIn()
@@ -126,55 +95,15 @@ void Enp1IntIn( )
     UEP1_T_LEN = sizeof(HIDKey);                                             //上传数据长度
     UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;                //有数据时上传数据并应答ACK
 }
-/*******************************************************************************
-* Function Name  : Enp2IntIn()
-* Description    : USB设备模式端点2的中断上传
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-void Enp2IntIn( )
-{
-    //memcpy( Ep2Buffer, HIDMouse, sizeof(HIDMouse));                              //加载上传数据
-    //UEP2_T_LEN = sizeof(HIDMouse);                                              //上传数据长度
-    //UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;                  //有数据时上传数据并应答ACK
-}
 
-void EP2Out(uint8_t len) {
-		UINT8 i;
-	                for ( i = 0; i < len; i ++ )
-                {
-                    Ep2Buffer[MAX_PACKET_SIZE+i] = Ep2Buffer[i] ^ 0xFF;         // OUT数据取反到IN由计算机验证
-                }
-                UEP2_T_LEN = len;
-                UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;       // 允许上传
-}
 
-void USB_EP2_OUT(void) {
-	            if ( U_TOG_OK )                                                     // 不同步的数据包将丢弃
-            {
-								EP2Out(USB_RX_LEN);
-            }
-}
 
-void USB_EP1_IN(void) {
-  UEP1_T_LEN = 0;                                                     //预使用发送长度一定要清空
-//UEP2_CTRL ^= bUEP_T_TOG;                                          //如果不设置自动翻转则需要手动翻转
-  UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
-  FLAG = 1;   	
-}
-
-void USB_EP2_IN(void) {
-  UEP2_T_LEN = 0;                                                     //预使用发送长度一定要清空
-//UEP1_CTRL ^= bUEP_T_TOG;                                          //如果不设置自动翻转则需要手动翻转
-  UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK	
-}
 
 void HIDValueHandle()
 {
     UINT8 i;
         i = getkey( );
-        printf( "%c", (UINT8)i );
+        //printf( "%c", (UINT8)i );
         switch(i)
         {
 //键盘数据上传示例
@@ -218,18 +147,34 @@ void HIDValueHandle()
         }
 }
 
+void ConfigSysClock() {
+// 		SAFE_MOD = 0x55;
+// 		SAFE_MOD = 0xAA;
+//     CLOCK_CFG |= bOSC_EN_XT;                          //使能外部晶振
+//     CLOCK_CFG &= ~bOSC_EN_INT;                        //关闭内部晶振    
+		SAFE_MOD = 0x55;
+		SAFE_MOD = 0xAA;
+// 		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x07;  // 32MHz	
+// 		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x06;  // 24MHz	
+// 		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x05;  // 16MHz	
+		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x04;  // 12MHz
+// 		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x03;  // 6MHz	
+// 		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x02;  // 3MHz	
+// 		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x01;  // 750KHz	
+// 		CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x00;  // 187.5MHz		
+		SAFE_MOD = 0x00;	
+}
+
 main()
 {
-    CfgFsys( );                                                           //CH559时钟选择配置
+    ConfigSysClock();                                                           //CH559时钟选择配置
     mDelaymS(5);                                                          //修改主频等待内部晶振稳定,必加	
     mInitSTDIO( );                                                        //串口0初始化
-//#ifdef DE_PRINTF
+	
     printf("start ...\n");
-//#endif	
+	
     USBDeviceInit();                                                      //USB设备模式初始化
     EA = 1;                                                               //允许单片机中断
-    UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
-    UEP2_T_LEN = 0;                                                       //预使用发送长度一定要清空
     FLAG = 0;
     Ready = 0;
 	
@@ -240,12 +185,9 @@ main()
             HIDValueHandle();
         }
         if(Ready&&(Ep2InKey == 0)){                                       
-//#ifdef DE_PRINTF                                                          //读取芯片ID号
           printf("ID0 = %02x %02x \n",(UINT16)*(PUINT8C)(0x3FFA),(UINT16)*(PUINT8C)(0x3FFB));
           printf("ID1 = %02x %02x \n",(UINT16)*(PUINT8C)(0x3FFC),(UINT16)*(PUINT8C)(0x3FFD));
           printf("ID2 = %02x %02x \n",(UINT16)*(PUINT8C)(0x3FFE),(UINT16)*(PUINT8C)(0x3FFF));
-//#endif	   							
-          CH554USBDevWakeup();                                           //	
           mDelaymS( 10 ); 					
           Enp1IntIn();				
         }

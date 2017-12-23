@@ -406,6 +406,11 @@
               <FileType>1</FileType>
               <FilePath>.\usb_it.c</FilePath>
             </File>
+            <File>
+              <FileName>usb_endp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_endp.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
