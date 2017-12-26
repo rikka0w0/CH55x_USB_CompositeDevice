@@ -25,8 +25,8 @@ code const uint8_t ProductName[] = {
 };
 
 code const uint8_t ManuName[] = {
-	16, 0x03, 	// Length = 30 bytes, String Descriptor (0x03) 
-	'R', 0, 'i', 0, 'k', 0, 'k', 0, '0', 0, 'w', 0, '0'
+	18, 0x03, 	// Length = 30 bytes, String Descriptor (0x03) 
+	'R', 0, 'i', 0, 'k', 0, 'k', 0, 'a', 0, '0', 0, 'w', 0, '0', 0
 };
 
 code const uint8_t* StringDescs[USB_STRINGDESC_COUNT] = {	
