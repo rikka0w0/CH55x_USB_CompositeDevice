@@ -3,9 +3,9 @@
 #include "CH554.h"
 
 // The buffer (Tx and Rx) must have an even address, size: 66 (0x42)
-xdata uint8_t Ep1Buffer[64 > (MAX_PACKET_SIZE + 2) ? 64 : (MAX_PACKET_SIZE + 2)] _at_ 0x000a;  //端点1 IN缓冲区,必须是偶地址
+xdata uint8_t Ep1Buffer[64 > (MAX_PACKET_SIZE + 2) ? 64 : (MAX_PACKET_SIZE + 2)] _at_ 0x000a;
 // The buffer (Tx and Rx) must have an even address, size: 132 (0x84)
-xdata uint8_t Ep2Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)] _at_ 0x0050;  //端点2 IN缓冲区,必须是偶地址
+xdata uint8_t Ep2Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)] _at_ 0x0050;
 
 
 uint8_t USB_EP_HALT_SET(uint8_t ep) {

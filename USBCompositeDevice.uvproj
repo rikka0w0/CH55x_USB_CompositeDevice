@@ -411,6 +411,11 @@
               <FileType>1</FileType>
               <FilePath>.\usb_endp.c</FilePath>
             </File>
+            <File>
+              <FileName>usb_string_desc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_string_desc.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

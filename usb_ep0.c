@@ -43,6 +43,15 @@ void USB_EP0_SETUP(void) {
 					pDescr = CfgDesc;
 					len = (USB_DESCSIZE_CONFIG_H << 8) | USB_DESCSIZE_CONFIG_L;
 					break;
+				case 3:												// String Descriptor
+					len = UsbSetupBuf->wValueL;	// Index
+					if (len < USB_STRINGDESC_COUNT) {
+						pDescr = StringDescs[len];
+						len = pDescr[0];
+					} else {
+						len = 0xFF;								// Not supported
+					}
+					break;
 				case 0x22:										// Report Descriptor
 					len = UsbSetupBuf->wIndexL;
 					if (len < USB_INTERFACES) {

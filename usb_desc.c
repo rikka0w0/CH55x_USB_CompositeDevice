@@ -13,10 +13,10 @@ code const uint8_t DevDesc[] = {
 	0x3d, 0x41,	// VID	0x413d
 	0x07, 0x21,	// PID	0x2107
 	0x00, 0x00,	// Device release number in BCD
-	0x00,				// Manufactor, index of string descriptor, 0 - NO
-	0x00,				// Product string descriptor ID
+	0x04,				// Manufactor, index of string descriptor
+	0x03,				// Product string descriptor ID
 	0x00,				// Serial number (String descriptor ID) 
-	0x01				// Number of possible configurations
+	0x01				// Number of available configurations
 };
 
 
@@ -45,7 +45,7 @@ code const uint8_t CfgDesc[] =
 	0x03,				// Interface class code
 	0x01,				// Subclass code 0=No subclass, 1=Boot Interface subclass
 	0x01,				// Protocol code 0=None, 1=Keyboard, 2=Mouse
-	0x00,				// Index of corresponding string descriptor
+	0x02,				// Index of corresponding string descriptor
 	
 	// HID descriptor (Keyboard)
 	9,					// Length of the descriptor
@@ -57,7 +57,7 @@ code const uint8_t CfgDesc[] =
 	// wItemLength: Total length of Report descriptor
 	USB_HIDREPSIZE_KEYBOARD, 0,
 	
-	// Endpoint descriptor (Keyboard)
+	// Endpoint descriptor (Keyboard)			// EP1, IN
 	7,				// Length of the descriptor
 	0x05,				// Type: Interface Descriptor
 	0x81, 			// Endpoint: D7: 0-Out 1-In, D6-D4=0, D3-D0 Endpoint number
@@ -72,7 +72,7 @@ code const uint8_t CfgDesc[] =
 	
 	
 	
-	// Interface descriptor (Mouse)
+	// Interface descriptor (Vendor-defined)
 	9,					// Length of the descriptor
 	0x04,				// Type: Interface Descriptor
 	0x00,				// Interface ID
@@ -81,7 +81,7 @@ code const uint8_t CfgDesc[] =
 	0x03,				// Interface class code
 	0x01,				// Subclass code 0=No subclass, 1=Boot Interface subclass
 	0x00,				// Protocol code 0=None, 1=Keyboard, 2=Mouse
-	0x00,				// Index of corresponding string descriptor
+	0x01,				// Index of corresponding string descriptor (On Windows, it is called "Bus reported device description")
 	
 	// HID descriptor (Vendor-defined)
 	9,				// Length of the descriptor
