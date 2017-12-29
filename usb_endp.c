@@ -63,7 +63,7 @@ void USB_EP2_OUT(void) {
 	uint8_t i;
 	if (U_TOG_OK) {	// Discard unsynchronized packets
 		for (i = 0; i < USB_RX_LEN; i++)
-			Ep2Buffer[MAX_PACKET_SIZE + i] = Ep2Buffer[i] ^ 0xFF;		// Invert bits and Tx to host (for validation)
+			EP2_TX_BUF[i] = EP2_RX_BUF[i] ^ 0xFF;		// Invert bits and Tx to host (for validation)
 		
 		UEP2_T_LEN = USB_RX_LEN;
 		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx

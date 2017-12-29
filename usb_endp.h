@@ -17,6 +17,9 @@ void USB_EP1_IN(void);
 
 // EP2
 xdata uint8_t Ep2Buffer[];
+#define EP2_SIZE 64
+#define EP2_RX_BUF (Ep2Buffer)
+#define EP2_TX_BUF (Ep2Buffer + EP2_SIZE)
 void USB_EP2_IN(void);
 void USB_EP2_OUT(void);
 
