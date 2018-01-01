@@ -117,9 +117,37 @@ code const uint8_t CfgDesc[] =
 							// D5:4	Usage Type: 00 = Data endpoint 01 = Feedback endpoint 10 = Implicit feedback Data endpoint 11 = Reserved
 							// D7:6 = 0
 	0x08,	0x00,	// Maximum packet size can be handled
-	0x0a				// Interval for polling, in units of 1 ms for low/full speed 
+	0x0a,				// Interval for polling, in units of 1 ms for low/full speed 
 	
 	
-	
+	    /******************** Descriptor of Mass Storage interface ********************/
+    /* 09 */
+	9,   /* bLength: Interface Descriptor size */
+  0x04,   /* bDescriptorType: */
+    /*      Interface descriptor type */
+  0x02,   /* bInterfaceNumber: Number of Interface */
+  0x00,   /* bAlternateSetting: Alternate setting */
+  0x02,   /* bNumEndpoints*/
+  0x08,   /* bInterfaceClass: MASS STORAGE Class */
+  0x06,   /* bInterfaceSubClass : SCSI transparent*/
+  0x50,   /* nInterfaceProtocol */
+  0,          /* iInterface: */
+  /* 18 */
+  7,   /*Endpoint descriptor length = 7*/
+  0x05,   /*Endpoint descriptor type */
+  0x83,   /*Endpoint address (IN, address 1) */
+  0x02,   /*Bulk endpoint type */
+  0x40,   /*Maximum packet size (64 bytes) */
+  0x00,
+  0x00,   /*Polling interval in milliseconds */
+  /* 25 */
+  0x07,   /*Endpoint descriptor length = 7 */
+  0x05,   /*Endpoint descriptor type */
+  0x03,   /*Endpoint address (OUT, address 2) */
+  0x02,   /*Bulk endpoint type */
+  0x40,   /*Maximum packet size (64 bytes) */
+  0x00,
+  0x00     /*Polling interval in milliseconds*/
+  /*32*/
 
 };

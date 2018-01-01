@@ -3,12 +3,12 @@
 
 #include "types.h"
 
-#define USB_INTERFACES 2
+#define USB_INTERFACES 3
 
 // Common USB Descriptors
 #define USB_DESCSIZE_DEVICE 18		// Constant, DO NOT change
 #define USB_DESCSIZE_CONFIG_H 0
-#define USB_DESCSIZE_CONFIG_L 66	// Actual size of your CfgDesc, set according to your configuration
+#define USB_DESCSIZE_CONFIG_L 89	// Actual size of your CfgDesc, set according to your configuration
 #define USB_STRINGDESC_COUNT 5 		// Number of String Descriptors available
 // Device Descriptor
 code const uint8_t DevDesc[];

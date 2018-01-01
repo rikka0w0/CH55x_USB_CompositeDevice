@@ -416,6 +416,21 @@
               <FileType>1</FileType>
               <FilePath>.\usb_string_desc.c</FilePath>
             </File>
+            <File>
+              <FileName>usb_bot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_bot.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_scsi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_scsi.c</FilePath>
+            </File>
+            <File>
+              <FileName>scsi_data.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\scsi_data.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

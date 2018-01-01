@@ -6,7 +6,8 @@
 xdata uint8_t Ep1Buffer[64 > (MAX_PACKET_SIZE + 2) ? 64 : (MAX_PACKET_SIZE + 2)] _at_ 0x000a;
 // The buffer (Tx and Rx) must have an even address, size: 132 (0x84)
 xdata uint8_t Ep2Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)] _at_ 0x0050;
-
+// The buffer (Tx and Rx) must have an even address, size: 132 (0x84)
+xdata uint8_t Ep3Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)] _at_ 0x00D4;
 
 uint8_t USB_EP_HALT_SET(uint8_t ep) {
 	switch (ep) {
@@ -16,6 +17,12 @@ uint8_t USB_EP_HALT_SET(uint8_t ep) {
 	case 0x02:
 		UEP2_CTRL = UEP2_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;
 		return 0;
+	case 0x83:
+		UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;
+		return 0;
+	case 0x03:
+		UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;
+		return 0;	
 	case 0x81:
 		UEP1_CTRL = UEP1_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;
 		return 0;
@@ -33,6 +40,12 @@ uint8_t USB_EP_HALT_CLEAR(uint8_t ep) {
 	case 0x02:
 		UEP2_CTRL = UEP2_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) | UEP_R_RES_ACK;
 		return 0;
+	case 0x83:
+		UEP3_CTRL = UEP3_CTRL & ~(bUEP_T_TOG | MASK_UEP_T_RES) | UEP_T_RES_NAK;
+		return 0;
+	case 0x03:
+		UEP3_CTRL = UEP3_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) | UEP_R_RES_ACK;
+		return 0;	
 	case 0x81:
 		UEP1_CTRL = UEP1_CTRL & ~(bUEP_T_TOG | MASK_UEP_T_RES) | UEP_T_RES_NAK;
 		return 0;

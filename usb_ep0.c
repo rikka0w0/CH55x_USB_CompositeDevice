@@ -8,7 +8,6 @@
 #define USB_FEATURE_ENDPOINT_HALT 0						// Endpoint only
 #define USB_FEATURE_DEVICE_REMOTE_WAKEUP 1		// Device only
 
-
 #define USB_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
 
 // The buffer (Tx and Rx) must have an even address, size: 10 (0x0A)
@@ -132,6 +131,34 @@ void USB_EP0_SETUP(void) {
 				break;
 			}	// switch (SetupReq)
 		}	// if ((UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK) == USB_REQ_TYP_STANDARD)
+		
+		else if ((UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK) == USB_REQ_TYP_CLASS) {
+			switch( SetupReq ) {
+				case 0x01:		// GetReport
+					break;
+				case 0x02:		// GetIdle
+					break;	
+				case 0x03:		// GetProtocol
+					break;				
+				case 0x09:		// SetReport										
+					break;
+				case 0x0A:		// SetIdle
+					break;	
+				case 0x0B:		// SetProtocol
+					break;
+				case 0xFE:		// Get Max LUN
+					Ep0Buffer[0] = 0;
+					len = 1;
+					break;
+				case 0xFF:		// Bulk-Only Mass Storage Reset
+					//CBW.dSignature = BOT_CBW_SIGNATURE;
+					//Bot_State = BOT_IDLE;
+					break;
+				default:
+					len = 0xFF;
+					break;
+			}
+		}
 		
 		// Process class requests and vendor requests here (if necessary)
 	} else {

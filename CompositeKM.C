@@ -16,17 +16,6 @@ sbit Ep2InKey = P1^5;
 #pragma  NOAREGS
 
 
-
-
-
-UINT8C CustomHID_StringSerial[26] =
-  {
-    26,           // Length of the descriptor
-    0x03,					// Type: String Descriptor
-    'S', 0, 'T', 0, 'M', 0,'3', 0,'2', 0
-  };
-
-
 /*键盘数据*/
 UINT8 HIDKey[8] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 
@@ -65,6 +54,14 @@ void USBDeviceInit()
 		UEP2_3_MOD |= bUEP2_RX_EN;		// Enable Endpoint2 Rx
     UEP2_CTRL = bUEP_AUTO_TOG | UEP_T_RES_NAK | UEP_R_RES_ACK;                                 //端点2自动翻转同步标志位，IN事务返回NAK
 	
+
+		//Configure Endpoint 3
+    UEP3_DMA = Ep3Buffer;	// Address of Endpoint 2 buffer
+    //UEP2_3_MOD = UEP2_3_MOD & ~bUEP2_BUF_MOD | bUEP2_TX_EN;
+		UEP2_3_MOD &=~bUEP3_BUF_MOD;	// Disable Endpoint3 buffer mode 
+		UEP2_3_MOD |= bUEP3_TX_EN;		// Enable Endpoint3 Tx
+		UEP2_3_MOD |= bUEP3_RX_EN;		// Enable Endpoint3 Rx
+    UEP3_CTRL = bUEP_AUTO_TOG | UEP_T_RES_NAK | UEP_R_RES_ACK;
 
 		// Setup interrupts
 	  USB_INT_FG = 0xFF;			 // Clear interrupt flags

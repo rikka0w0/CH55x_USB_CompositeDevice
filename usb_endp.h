@@ -23,13 +23,21 @@ xdata uint8_t Ep2Buffer[];
 void USB_EP2_IN(void);
 void USB_EP2_OUT(void);
 
+// EP3
+xdata uint8_t Ep3Buffer[];
+#define EP3_SIZE 64
+#define EP3_RX_BUF (Ep3Buffer)
+#define EP3_TX_BUF (Ep3Buffer + EP3_SIZE)
+void Mass_Storage_In(void);
+void Mass_Storage_Out(void);
+
 void NOP_Process(void);
 
 // Out
 #define EP0_OUT_Callback USB_EP0_OUT
 #define EP1_OUT_Callback NOP_Process
 #define EP2_OUT_Callback USB_EP2_OUT
-#define EP3_OUT_Callback NOP_Process
+#define EP3_OUT_Callback Mass_Storage_Out
 #define EP4_OUT_Callback NOP_Process
 		
 // SOF
@@ -43,7 +51,7 @@ void NOP_Process(void);
 #define EP0_IN_Callback USB_EP0_IN
 #define EP1_IN_Callback USB_EP1_IN
 #define EP2_IN_Callback USB_EP2_IN
-#define EP3_IN_Callback NOP_Process
+#define EP3_IN_Callback Mass_Storage_In
 #define EP4_IN_Callback NOP_Process
 		
 // SETUP
