@@ -29,11 +29,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usb_scsi.h"
 #include "usb_bot.h"
+#include "usb_mal.h"
 
+#include "usb_endp.h"
 #include "ch554.h"
 #include "types.h"
 
-
+sbit led = P1^7;
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -41,31 +43,77 @@
 /* External variables --------------------------------------------------------*/
 extern uint8_t Bot_State;
 extern xdata Bulk_Only_CBW CBW;
-
-xdata uint32_t Mass_Memory_Size[1];
-xdata uint32_t Mass_Block_Size[1];
-xdata uint32_t Mass_Block_Count[1];
+extern xdata Bulk_Only_CSW CSW;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
-#define FLASH25_SIZE 0x180000			//Capacity 2MB
-#define FLASH25_PAGESIZE 0x100		//Page Size	256Bytes
-#define FLASH25_SECTORSIZE 0x1000	//Sector Size 4KB
+// Memory
+xdata uint32_t Block_Read_count = 0;
+xdata uint32_t Block_offset;
+xdata uint8_t Data_Buffer[BULK_MAX_PACKET_SIZE * 2]; /* 512 bytes*/
 
-#define MAL_OK   0
-#define MAL_FAIL 1
+#define TXFR_IDLE     0
+#define TXFR_ONGOING  1
+xdata uint8_t TransferState = TXFR_IDLE;
 
-uint16_t MAL_GetStatus (uint8_t lun) {
-	 switch (lun){
-		 case 0:	//SPI Flash
-			 Mass_Block_Count[0] = FLASH25_SIZE/FLASH25_SECTORSIZE;
-			 Mass_Block_Size[0] =  FLASH25_SECTORSIZE;
-			 Mass_Memory_Size[0] = FLASH25_SIZE;
-			 return MAL_OK;
-		 default:
-			 return MAL_FAIL;
-	 }
+void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
+{
+  static uint32_t Offset, Length;
+	uint8_t i;
+	
+  if (TransferState == TXFR_IDLE )
+  {
+    Offset = LBA * Mass_Block_Size[lun];
+    Length = BlockNbr * Mass_Block_Size[lun];
+    TransferState = TXFR_ONGOING;
+  }
+
+  if (TransferState == TXFR_ONGOING )
+  {
+    if (!Block_Read_count)
+    {
+      //MAL_Read(lun , Offset , Data_Buffer, Mass_Block_Size[lun]);
+
+      // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer, BULK_MAX_PACKET_SIZE);
+			for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
+				(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer)[i];
+			UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
+
+      Block_Read_count = Mass_Block_Size[lun] - BULK_MAX_PACKET_SIZE;
+      Block_offset = BULK_MAX_PACKET_SIZE;
+    }
+    else
+    {
+      // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer + Block_offset, BULK_MAX_PACKET_SIZE);
+			for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
+				(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer + Block_offset)[i];
+			UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
+
+      Block_Read_count -= BULK_MAX_PACKET_SIZE;
+      Block_offset += BULK_MAX_PACKET_SIZE;
+    }
+
+    // SetEPTxCount(ENDP1, BULK_MAX_PACKET_SIZE);
+		UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
+    // SetEPTxStatus(ENDP1, EP_TX_VALID);
+		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx
+		
+    Offset += BULK_MAX_PACKET_SIZE;
+    Length -= BULK_MAX_PACKET_SIZE;
+
+    CSW.dDataResidue -= BULK_MAX_PACKET_SIZE;
+    led=0;
+  }
+  if (Length == 0)
+  {
+    Block_Read_count = 0;
+    Block_offset = 0;
+    Offset = 0;
+    Bot_State = BOT_DATA_IN_LAST;
+    TransferState = TXFR_IDLE;
+    led=1;
+  }
 }
 
 /*******************************************************************************
@@ -238,32 +286,24 @@ void SCSI_Start_Stop_Unit_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr)
-{
-  if (Bot_State == BOT_IDLE)
-  {
+void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
+  if (Bot_State == BOT_IDLE) {
     if (!(SCSI_Address_Management(CBW.bLUN, SCSI_READ10, LBA, BlockNbr)))/*address out of range*/
-    {
       return;
-    }
 
-    if ((CBW.bmFlags & 0x80) != 0)
-    {
+    if ((CBW.bmFlags & 0x80) != 0) {
       Bot_State = BOT_DATA_IN;
-      // Read_Memory(lun, LBA , BlockNbr);
-    }
-    else
-    {
+    } else {
       Bot_Abort(BOTH_DIR);
       Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
       Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+			return;
     }
-    return;
   }
-  else if (Bot_State == BOT_DATA_IN)
-  {
-    // Read_Memory(lun , LBA , BlockNbr);
-  }
+	
+	
+  if (Bot_State == BOT_DATA_IN)
+    Read_Memory(lun , LBA , BlockNbr);
 }
 
 /*******************************************************************************

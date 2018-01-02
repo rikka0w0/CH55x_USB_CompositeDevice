@@ -431,6 +431,11 @@
               <FileType>1</FileType>
               <FilePath>.\scsi_data.c</FilePath>
             </File>
+            <File>
+              <FileName>usb_mal.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_mal.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

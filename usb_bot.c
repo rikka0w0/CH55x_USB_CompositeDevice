@@ -29,14 +29,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usb_scsi.h"
 #include "usb_bot.h"
+#include "usb_mal.h"
 
 #include "usb_endp.h"
 #include "types.h"
 #include "ch554.h"
 #include <String.h>
-
-sbit led = P1^7;
-sbit led2 = P1^6;
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,12 +42,11 @@ sbit led2 = P1^6;
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 uint8_t Bot_State = BOT_IDLE;
-xdata uint8_t Bulk_Data_Buff[BULK_MAX_PACKET_SIZE];  /* data buffer*/
 uint16_t Data_Len;
 xdata Bulk_Only_CBW CBW;
 xdata Bulk_Only_CSW CSW;
-uint32_t SCSI_LBA , SCSI_BlkLen;
-uint32_t Max_Lun = 0;
+uint32_t SCSI_LBA;
+uint16_t SCSI_BlkLen;
 /* Extern variables ----------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Extern function prototypes ------------------------------------------------*/
@@ -74,12 +71,9 @@ void Mass_Storage_In (void)
       
       break;
     case BOT_DATA_IN:
-      switch (CBW.CB[0])
-      {
-        case SCSI_READ10:
-          SCSI_Read10_Cmd(CBW.bLUN , SCSI_LBA , SCSI_BlkLen);
-          break;
-      }
+			if (CBW.CB[0] == SCSI_READ10) {
+        SCSI_Read10_Cmd(CBW.bLUN , SCSI_LBA , SCSI_BlkLen);
+			}
       break;
     case BOT_DATA_IN_LAST:
       Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
@@ -102,7 +96,6 @@ void Mass_Storage_In (void)
 void Mass_Storage_Out (void)
 {
   uint8_t CMD;
-  CMD = CBW.CB[0];
 
 	Data_Len = USB_RX_LEN;	// EP3_RX_BUF
 	
@@ -112,14 +105,14 @@ void Mass_Storage_Out (void)
       CBW_Decode();
       break;
     case BOT_DATA_OUT:
-      if (CMD == SCSI_WRITE10)
-      {
+      if (CBW.CB[0] == SCSI_WRITE10) {
         SCSI_Write10_Cmd(CBW.bLUN , SCSI_LBA , SCSI_BlkLen);
-        break;
-      }
-      Bot_Abort(DIR_OUT);
-      Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
-      Set_CSW (CSW_PHASE_ERROR, SEND_CSW_DISABLE);
+      } else {
+				Bot_Abort(DIR_OUT);
+				Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+				Set_CSW (CSW_PHASE_ERROR, SEND_CSW_DISABLE);				
+			}
+
       break;
     default:
       Bot_Abort(BOTH_DIR);
@@ -168,18 +161,25 @@ void CBW_Decode(void)
     return;
   }
 	
-  if ((CBW.CB[0] == SCSI_READ10 ) || (CBW.CB[0] == SCSI_WRITE10 ))
-  {
-    /* Calculate Logical Block Address */
-    SCSI_LBA = (CBW.CB[2] << 24) | (CBW.CB[3] << 16) | (CBW.CB[4] <<  8) | CBW.CB[5];
-    /* Calculate the Number of Blocks to transfer */
-    SCSI_BlkLen = (CBW.CB[7] <<  8) | CBW.CB[8];
-  }
+   if ((CBW.CB[0] == SCSI_READ10 ) || (CBW.CB[0] == SCSI_WRITE10 ))
+   {
+     /* Calculate Logical Block Address */
+		// SCSI_LBA = (CBW.CB[2] << 24) | (CBW.CB[3] << 16) | (CBW.CB[4] <<  8) | CBW.CB[5];
+     ((uint8_t*)&SCSI_LBA)[0] = CBW.CB[2];
+ 		((uint8_t*)&SCSI_LBA)[1] = CBW.CB[3];
+ 		((uint8_t*)&SCSI_LBA)[2] = CBW.CB[4];
+ 		((uint8_t*)&SCSI_LBA)[3] = CBW.CB[5];
+ 		
+     /* Calculate the Number of Blocks to transfer */
+		// SCSI_BlkLen = (CBW.CB[7] <<  8) | CBW.CB[8];
+		((uint8_t*)&SCSI_BlkLen)[0] = CBW.CB[7];
+		((uint8_t*)&SCSI_BlkLen)[1] = CBW.CB[8];
+   }
 	
   if (CBW.dSignature == BOT_CBW_SIGNATURE)
   {
     /* Valid CBW */
-    if ((CBW.bLUN > Max_Lun) || (CBW.bCBLength < 1) || (CBW.bCBLength > 16))
+    if ((CBW.bLUN > MAL_MAX_LUN) || (CBW.bCBLength < 1) || (CBW.bCBLength > 16))
     {
       Bot_Abort(BOTH_DIR);
       Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
@@ -190,7 +190,7 @@ void CBW_Decode(void)
       switch (CBW.CB[0])
       {
         case SCSI_REQUEST_SENSE:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_RequestSense_Cmd (CBW.bLUN);
+          SCSI_RequestSense_Cmd (CBW.bLUN);
           break;
         case SCSI_INQUIRY:
           SCSI_Inquiry_Cmd(CBW.bLUN);
@@ -202,22 +202,22 @@ void CBW_Decode(void)
           SCSI_Start_Stop_Unit_Cmd(CBW.bLUN);
           break;
         case SCSI_MODE_SENSE6:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_ModeSense6_Cmd (CBW.bLUN);
+          SCSI_ModeSense6_Cmd (CBW.bLUN);
           break;
         case SCSI_MODE_SENSE10:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_ModeSense10_Cmd (CBW.bLUN);
+          SCSI_ModeSense10_Cmd (CBW.bLUN);
           break;
         case SCSI_READ_FORMAT_CAPACITIES:
           SCSI_ReadFormatCapacity_Cmd(CBW.bLUN);
           break;
         case SCSI_READ_CAPACITY10:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_ReadCapacity10_Cmd(CBW.bLUN);
+          SCSI_ReadCapacity10_Cmd(CBW.bLUN);
           break;
         case SCSI_TEST_UNIT_READY:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_TestUnitReady_Cmd(CBW.bLUN);
+          SCSI_TestUnitReady_Cmd(CBW.bLUN);
           break;
         case SCSI_READ10:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_Read10_Cmd(CBW.bLUN, SCSI_LBA , SCSI_BlkLen);
+          SCSI_Read10_Cmd(CBW.bLUN, SCSI_LBA , SCSI_BlkLen);
           break;
         case SCSI_WRITE10:
           SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_Write10_Cmd(CBW.bLUN, SCSI_LBA , SCSI_BlkLen);
@@ -295,6 +295,7 @@ void CBW_Decode(void)
 *******************************************************************************/
 void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len)
 {	
+	uint16_t dDataResidue = CSW.dDataResidue;
   // USB_SIL_Write(EP1_IN, Data_Pointer, Data_Len);
 	memcpy(EP3_TX_BUF, Data_Pointer, Data_Len);
 	UEP3_T_LEN = Data_Len;
@@ -303,8 +304,12 @@ void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len)
 	
   Bot_State = BOT_DATA_IN_LAST;
 
-  CSW.dDataResidue = ((uint16_t)CSW.dDataResidue) - Data_Len;
-	
+  // CSW.dDataResidue = ((uint16_t)CSW.dDataResidue) - Data_Len;
+	dDataResidue -= Data_Len;
+	((uint8_t*)(&CSW.dDataResidue))[0] = ((uint8_t*)&dDataResidue)[1];
+	((uint8_t*)(&CSW.dDataResidue))[1] = ((uint8_t*)&dDataResidue)[0];
+	((uint8_t*)(&CSW.dDataResidue))[2] = 0;
+	((uint8_t*)(&CSW.dDataResidue))[3] = 0;
   CSW.bStatus = CSW_CMD_PASSED;
 }
 
