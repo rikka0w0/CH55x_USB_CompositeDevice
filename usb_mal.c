@@ -5,8 +5,8 @@
 xdata uint32_t Mass_Block_Size[MAL_MAX_LUN+1];
 xdata uint32_t Mass_Block_Count[MAL_MAX_LUN+1];
 
-#define FLASH25_SIZE 0x180000			//Capacity 2MB
-#define FLASH25_SECTORSIZE 0x1000	//Sector Size 4KB
+#define FLASH25_SIZE 65536			//Capacity 64KiB
+#define FLASH25_SECTORSIZE 512	//Sector Size 512B
 
 uint8_t MAL_GetStatus (uint8_t lun) {
 	 switch (lun){

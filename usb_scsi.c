@@ -51,7 +51,7 @@ extern xdata Bulk_Only_CSW CSW;
 // Memory
 xdata uint32_t Block_Read_count = 0;
 xdata uint32_t Block_offset;
-xdata uint8_t Data_Buffer[BULK_MAX_PACKET_SIZE * 2]; /* 512 bytes*/
+xdata uint8_t Data_Buffer[512]; /* 512 bytes*/
 
 #define TXFR_IDLE     0
 #define TXFR_ONGOING  1
@@ -274,10 +274,16 @@ void Set_Scsi_Sense_Data(uint8_t lun, uint8_t Sens_Key, uint8_t Asc)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_Start_Stop_Unit_Cmd(uint8_t lun)
-{
-  Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
+sbit led2 = P1^6;
+void SCSI_Start_Stop_Unit_Cmd(uint8_t lun) {
+	led2=0;
+  Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
 }
+
+void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun) {
+  Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+}
+
 
 /*******************************************************************************
 * Function Name  : SCSI_Read10_Cmd

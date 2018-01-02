@@ -94,7 +94,7 @@
 #define READ_FORMAT_CAPACITY_DATA_LEN               0x0C
 #define READ_CAPACITY10_DATA_LEN                    0x08
 #define MODE_SENSE10_DATA_LEN                       0x08
-#define MODE_SENSE6_DATA_LEN                        0x04
+#define MODE_SENSE6_DATA_LEN                        0x10
 #define REQUEST_SENSE_DATA_LEN                      0x12
 #define STANDARD_INQUIRY_DATA_LEN                   0x24
 #define BLKVFY                                      0x04
@@ -114,6 +114,7 @@ void SCSI_ReadFormatCapacity_Cmd(uint8_t lun);
 void SCSI_ReadCapacity10_Cmd(uint8_t lun);
 void SCSI_RequestSense_Cmd (uint8_t lun);
 void SCSI_Start_Stop_Unit_Cmd(uint8_t lun);
+void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun);
 void SCSI_ModeSense6_Cmd (uint8_t lun);
 void SCSI_ModeSense10_Cmd (uint8_t lun);
 void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr);

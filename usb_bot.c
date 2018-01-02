@@ -60,7 +60,7 @@ uint16_t SCSI_BlkLen;
 * Return         : None.
 *******************************************************************************/
 void Mass_Storage_In (void)
-{
+{	
   switch (Bot_State)
   {
     case BOT_CSW_Send:
@@ -95,8 +95,6 @@ void Mass_Storage_In (void)
 *******************************************************************************/
 void Mass_Storage_Out (void)
 {
-  uint8_t CMD;
-
 	Data_Len = USB_RX_LEN;	// EP3_RX_BUF
 	
   switch (Bot_State)
@@ -199,7 +197,7 @@ void CBW_Decode(void)
           SCSI_Start_Stop_Unit_Cmd(CBW.bLUN);
           break;
         case SCSI_ALLOW_MEDIUM_REMOVAL:
-          SCSI_Start_Stop_Unit_Cmd(CBW.bLUN);
+          SCSI_Allow_Medium_Removal_Cmd(CBW.bLUN);
           break;
         case SCSI_MODE_SENSE6:
           SCSI_ModeSense6_Cmd (CBW.bLUN);
@@ -220,7 +218,7 @@ void CBW_Decode(void)
           SCSI_Read10_Cmd(CBW.bLUN, SCSI_LBA , SCSI_BlkLen);
           break;
         case SCSI_WRITE10:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_Write10_Cmd(CBW.bLUN, SCSI_LBA , SCSI_BlkLen);
+          SCSI_Write10_Cmd(CBW.bLUN, SCSI_LBA , SCSI_BlkLen);
           break;
         case SCSI_VERIFY10:
           SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_Verify10_Cmd(CBW.bLUN);

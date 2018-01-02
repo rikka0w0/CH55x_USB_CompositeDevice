@@ -43,10 +43,10 @@ code const uint8_t Standard_Inquiry_Data[] =
   {
     0x00,          /* Direct Access Device */
     0x80,          /* RMB = 1: Removable Medium */
-    0x02,          /* Version: No conformance claim to standard */
+    0x04,          /* Version: No conformance claim to standard */
     0x02,
 
-    36 - 4,          /* Additional Length */
+    0x1f,          /* Additional Length */
     0x00,          /* SCCS = 1: Storage Controller Component */
     0x00,
     0x00,
@@ -62,10 +62,22 @@ code const uint8_t Standard_Inquiry_Data[] =
 /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 code const uint8_t Mode_Sense6_data[] =
   {
-    0x03,
+    0x0f,
     0x00,
     0x00,
     0x00,
+		0x1c,
+		0x0a,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00
   };
 
 /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
