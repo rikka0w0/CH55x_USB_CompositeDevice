@@ -275,13 +275,15 @@ void Set_Scsi_Sense_Data(uint8_t lun, uint8_t Sens_Key, uint8_t Asc)
 * Return         : None.
 *******************************************************************************/
 sbit led2 = P1^6;
+uint8_t dead=0;
 void SCSI_Start_Stop_Unit_Cmd(uint8_t lun) {
 	led2=0;
-  Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+	dead=1;
+  Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
 }
 
 void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun) {
-  Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+  Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
 }
 
 

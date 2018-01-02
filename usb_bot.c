@@ -51,7 +51,7 @@ uint16_t SCSI_BlkLen;
 /* Private function prototypes -----------------------------------------------*/
 /* Extern function prototypes ------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
+extern uint8_t dead;
 /*******************************************************************************
 * Function Name  : Mass_Storage_In
 * Description    : Mass Storage IN transfer.
@@ -64,6 +64,11 @@ void Mass_Storage_In (void)
   switch (Bot_State)
   {
     case BOT_CSW_Send:
+			if (dead==1){
+				USB_CTRL &= ~bUC_DEV_PU_EN;	
+				UDEV_CTRL &= ~bUD_PORT_EN;	// Enable USB Port
+				return;
+			}
     case BOT_ERROR:
       Bot_State = BOT_IDLE;
       //SetEPRxStatus(ENDP2, EP_RX_VALID);/* enable the Endpoint to receive the next cmd*/	
