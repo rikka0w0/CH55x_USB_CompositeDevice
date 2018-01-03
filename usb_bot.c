@@ -42,9 +42,8 @@ sbit led2 = P1^6;
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 uint8_t Bot_State = BOT_IDLE;
-uint16_t Data_Len;
 xdata Bulk_Only_CBW CBW;
-xdata Bulk_Only_CSW CSW;
+uint16_t dataResidue;
 uint32_t SCSI_LBA;
 uint16_t SCSI_BlkLen;
 /* Extern variables ----------------------------------------------------------*/
@@ -101,8 +100,6 @@ void Mass_Storage_In (void)
 *******************************************************************************/
 void Mass_Storage_Out (void)
 {
-	Data_Len = USB_RX_LEN;	// EP3_RX_BUF
-	
   switch (Bot_State)
   {
     case BOT_IDLE:
@@ -150,11 +147,9 @@ void CBW_Decode(void)
 		((uint8_t*)(&CBW))[i] = EP3_RX_BUF[i];
 	
 	L2B32(&(CBW.dDataLength), EP3_RX_BUF, 8);
+  dataResidue = CBW.dDataLength;
 	
-	CSW.dTag = CBW.dTag;
-  CSW.dDataResidue = CBW.dDataLength;
-	
-  if (Data_Len != BOT_CBW_PACKET_LENGTH)
+  if (USB_RX_LEN != BOT_CBW_PACKET_LENGTH)	// EP3_RX_BUF
   {
     Bot_Abort(BOTH_DIR);
     /* reset the CBW.dSignature to disable the clear feature until receiving a Mass storage reset*/
@@ -299,22 +294,23 @@ void CBW_Decode(void)
 *******************************************************************************/
 void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len)
 {	
-	uint16_t dDataResidue = CSW.dDataResidue;
+//	uint16_t dDataResidue = CSW.dDataResidue;
   // USB_SIL_Write(EP1_IN, Data_Pointer, Data_Len);
 	memcpy(EP3_TX_BUF, Data_Pointer, Data_Len);
 	UEP3_T_LEN = Data_Len;
 	// SetEPTxStatus(ENDP1, EP_TX_VALID);
 	UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx
 	
+	dataResidue -= Data_Len;
+	
   Bot_State = BOT_DATA_IN_LAST;
+}
 
-  // CSW.dDataResidue = ((uint16_t)CSW.dDataResidue) - Data_Len;
-	dDataResidue -= Data_Len;
-	((uint8_t*)(&CSW.dDataResidue))[0] = 0;
-	((uint8_t*)(&CSW.dDataResidue))[1] = 0;
-	((uint8_t*)(&CSW.dDataResidue))[2] = ((uint8_t*)&dDataResidue)[0];
-	((uint8_t*)(&CSW.dDataResidue))[3] = ((uint8_t*)&dDataResidue)[1];	
-  CSW.bStatus = CSW_CMD_PASSED;
+void Transfer_Failed_ReadWrite(void) {
+	UEP3_T_LEN = 0;		// Send an empty packet
+	UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx	
+	
+	Bot_State = BOT_DATA_IN_LAST_FAIL;
 }
 
 /*******************************************************************************
@@ -327,23 +323,31 @@ void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len)
 *******************************************************************************/
 void Set_CSW (uint8_t CSW_Status, uint8_t Send_Permission)
 {
-	uint8_t i;
-	CSW.bStatus = CSW_Status;
-  CSW.dSignature = BOT_CSW_SIGNATURE;
-	
-  // USB_SIL_Write(EP1_IN, ((uint8_t *)& CSW), CSW_DATA_LENGTH);
-	//memcpy(EP3_TX_BUF, ((uint8_t *)& CSW), CSW_DATA_LENGTH);
-	for (i = 0; i < CSW_DATA_LENGTH; i++) 
-		(EP3_TX_BUF)[i] = ((uint8_t *)&CSW)[i];
+	// Make CSW
 	UEP3_T_LEN = CSW_DATA_LENGTH;
-	(EP3_TX_BUF)[8] = ((uint8_t *)&CSW)[11];
-	(EP3_TX_BUF)[9] = ((uint8_t *)&CSW)[10];
-	(EP3_TX_BUF)[10] = ((uint8_t *)&CSW)[9];
-	(EP3_TX_BUF)[11] = ((uint8_t *)&CSW)[8];
+	// CSW.dSignature
+	EP3_TX_BUF[0] = BOT_CSW_SIGNATURE0;
+	EP3_TX_BUF[1] = BOT_CSW_SIGNATURE1;
+	EP3_TX_BUF[2] = BOT_CSW_SIGNATURE2;
+	EP3_TX_BUF[3] = BOT_CSW_SIGNATURE3;
+	
+	// CSW.dTag
+	EP3_TX_BUF[4] = ((uint8_t *)&CBW.dTag)[0];
+	EP3_TX_BUF[5] = ((uint8_t *)&CBW.dTag)[1];
+	EP3_TX_BUF[6] = ((uint8_t *)&CBW.dTag)[2];
+	EP3_TX_BUF[7] = ((uint8_t *)&CBW.dTag)[3];
+	
+	// CSW.dDataResidue
+	EP3_TX_BUF[8] = ((uint8_t *)&dataResidue)[1];
+	EP3_TX_BUF[9] = ((uint8_t *)&dataResidue)[0];
+	EP3_TX_BUF[10] = 0;
+	EP3_TX_BUF[11] = 0;
+	
+	// CSW.bStatus
+	EP3_TX_BUF[12] = CSW_Status;
 	
   Bot_State = BOT_ERROR;
-  if (Send_Permission)
-  {		
+  if (Send_Permission) {		
     Bot_State = BOT_CSW_Send;
     // SetEPTxStatus(ENDP1, EP_TX_VALID);
 		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx

@@ -47,15 +47,6 @@ typedef struct _Bulk_Only_CBW
 }
 Bulk_Only_CBW;
 
-/* Bulk-only Command Status Wrapper */
-typedef struct _Bulk_Only_CSW
-{
-  uint32_t dSignature;
-  uint32_t dTag;
-  uint32_t dDataResidue;
-  uint8_t  bStatus;
-}
-Bulk_Only_CSW;
 /* Exported constants --------------------------------------------------------*/
 
 #define BULK_MAX_PACKET_SIZE 0x40
@@ -74,10 +65,12 @@ Bulk_Only_CSW;
 //#define BOT_CBW_SIGNATURE             0x43425355
 //#define BOT_CSW_SIGNATURE             0x53425355
 #define BOT_CBW_SIGNATURE							0x55534243		// Big-Endian
-#define BOT_CSW_SIGNATURE							0x55534253		// Big-Endian
+#define BOT_CSW_SIGNATURE0						0x55;
+#define BOT_CSW_SIGNATURE1						0x53;
+#define BOT_CSW_SIGNATURE2						0x42;
+#define BOT_CSW_SIGNATURE3						0x53;
 #define BOT_CBW_PACKET_LENGTH         31
-
-#define CSW_DATA_LENGTH               0x000D
+#define CSW_DATA_LENGTH               13
 
 /* CSW Status Definitions */
 #define CSW_CMD_PASSED                0x00
@@ -97,6 +90,7 @@ void Mass_Storage_In (void);
 void Mass_Storage_Out (void);
 void CBW_Decode(void);
 void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len);
+void Transfer_Failed_ReadWrite(void);
 void Set_CSW (uint8_t CSW_Status, uint8_t Send_Permission);
 void Bot_Abort(uint8_t Direction);
 

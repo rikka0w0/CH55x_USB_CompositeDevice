@@ -43,7 +43,7 @@ sbit led = P1^7;
 /* External variables --------------------------------------------------------*/
 extern uint8_t Bot_State;
 extern xdata Bulk_Only_CBW CBW;
-extern xdata Bulk_Only_CSW CSW;
+extern uint16_t dataResidue;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -102,7 +102,7 @@ void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
     Offset += BULK_MAX_PACKET_SIZE;
     Length -= BULK_MAX_PACKET_SIZE;
 
-    CSW.dDataResidue -= BULK_MAX_PACKET_SIZE;
+    dataResidue -= BULK_MAX_PACKET_SIZE;
     led=0;
   }
   if (Length == 0)
@@ -162,8 +162,7 @@ void SCSI_ReadFormatCapacity_Cmd(uint8_t lun)
   if (MAL_GetStatus(lun) != 0 )
   {
     Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
-    Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
-    // Bot_Abort(DIR_IN);
+    Transfer_Failed_ReadWrite();
     return;
   }
 	
@@ -189,12 +188,7 @@ void SCSI_ReadCapacity10_Cmd(uint8_t lun)
 {
   if (MAL_GetStatus(lun)) {
     Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
-    //Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
-	
-		UEP3_T_LEN = 0;
-		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx	
-		Bot_State = 6;
-		
+    Transfer_Failed_ReadWrite();
 		return;
   }
 		
@@ -302,6 +296,12 @@ void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun) {
 *******************************************************************************/
 void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
   if (Bot_State == BOT_IDLE) {
+		if (MAL_GetStatus(lun)) {
+			Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+			Transfer_Failed_ReadWrite();
+			return;
+		}
+		
     if (!(SCSI_Address_Management(CBW.bLUN, SCSI_READ10, LBA, BlockNbr)))/*address out of range*/
       return;
 
