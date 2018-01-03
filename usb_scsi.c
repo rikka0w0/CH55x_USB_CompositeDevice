@@ -163,7 +163,7 @@ void SCSI_ReadFormatCapacity_Cmd(uint8_t lun)
   {
     Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
     Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
-    Bot_Abort(DIR_IN);
+    // Bot_Abort(DIR_IN);
     return;
   }
 	
@@ -187,24 +187,27 @@ void SCSI_ReadFormatCapacity_Cmd(uint8_t lun)
 *******************************************************************************/
 void SCSI_ReadCapacity10_Cmd(uint8_t lun)
 {
-  if (MAL_GetStatus(lun))
-  {
+  if (MAL_GetStatus(lun)) {
     Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
-    Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
-    Bot_Abort(DIR_IN);
-    return;
+    //Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+	
+		UEP3_T_LEN = 0;
+		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx	
+		Bot_State = 6;
+		
+		return;
   }
-
-  ReadCapacity10_Data[0] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 24);
-  ReadCapacity10_Data[1] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 16);
-  ReadCapacity10_Data[2] = (uint8_t)((Mass_Block_Count[lun] - 1) >>  8);
-  ReadCapacity10_Data[3] = (uint8_t)(Mass_Block_Count[lun] - 1);
-
-  ReadCapacity10_Data[4] = (uint8_t)(Mass_Block_Size[lun] >>  24);
-  ReadCapacity10_Data[5] = (uint8_t)(Mass_Block_Size[lun] >>  16);
-  ReadCapacity10_Data[6] = (uint8_t)(Mass_Block_Size[lun] >>  8);
-  ReadCapacity10_Data[7] = (uint8_t)(Mass_Block_Size[lun]);
-  Transfer_Data_Request(ReadCapacity10_Data, READ_CAPACITY10_DATA_LEN);
+		
+	ReadCapacity10_Data[0] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 24);
+	ReadCapacity10_Data[1] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 16);
+	ReadCapacity10_Data[2] = (uint8_t)((Mass_Block_Count[lun] - 1) >>  8);
+	ReadCapacity10_Data[3] = (uint8_t)(Mass_Block_Count[lun] - 1);
+	
+	ReadCapacity10_Data[4] = (uint8_t)(Mass_Block_Size[lun] >>  24);
+	ReadCapacity10_Data[5] = (uint8_t)(Mass_Block_Size[lun] >>  16);
+	ReadCapacity10_Data[6] = (uint8_t)(Mass_Block_Size[lun] >>  8);
+	ReadCapacity10_Data[7] = (uint8_t)(Mass_Block_Size[lun]);
+	Transfer_Data_Request(ReadCapacity10_Data, READ_CAPACITY10_DATA_LEN);		
 }
 
 /*******************************************************************************
@@ -274,16 +277,19 @@ void Set_Scsi_Sense_Data(uint8_t lun, uint8_t Sens_Key, uint8_t Asc)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-sbit led2 = P1^6;
 uint8_t dead=0;
 void SCSI_Start_Stop_Unit_Cmd(uint8_t lun) {
-	led2=0;
-	dead=1;
   Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
+	dead=1;
 }
 
 void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun) {
-  Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
+	if (CBW.CB[4] & 1) {
+		Set_Scsi_Sense_Data(lun, ILLEGAL_REQUEST, INVALID_COMMAND);
+		Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+	} else {
+		Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
+	}
 }
 
 
@@ -371,24 +377,7 @@ void SCSI_Verify10_Cmd(uint8_t lun)
     Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
   }
 }
-/*******************************************************************************
-* Function Name  : SCSI_Valid_Cmd
-* Description    : Valid Commands routine.
-* Input          : None.
-* Output         : None.
-* Return         : None.
-*******************************************************************************/
-void SCSI_Valid_Cmd(uint8_t lun)
-{
-  if (CBW.dDataLength != 0)
-  {
-    Bot_Abort(BOTH_DIR);
-    Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_COMMAND);
-    Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
-  }
-  else
-    Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
-}
+
 /*******************************************************************************
 * Function Name  : SCSI_Valid_Cmd
 * Description    : Valid Commands routine.
@@ -402,7 +391,7 @@ void SCSI_TestUnitReady_Cmd(uint8_t lun)
   {
     Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
     Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
-    Bot_Abort(DIR_IN);
+    // Bot_Abort(DIR_IN);
     return;
   }
   else

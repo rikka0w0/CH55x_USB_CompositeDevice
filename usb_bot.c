@@ -36,7 +36,7 @@
 #include "ch554.h"
 #include <String.h>
 
-
+sbit led2 = P1^6;
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -51,7 +51,7 @@ uint16_t SCSI_BlkLen;
 /* Private function prototypes -----------------------------------------------*/
 /* Extern function prototypes ------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-extern uint8_t dead;
+
 /*******************************************************************************
 * Function Name  : Mass_Storage_In
 * Description    : Mass Storage IN transfer.
@@ -64,11 +64,6 @@ void Mass_Storage_In (void)
   switch (Bot_State)
   {
     case BOT_CSW_Send:
-			if (dead==1){
-				USB_CTRL &= ~bUC_DEV_PU_EN;	
-				UDEV_CTRL &= ~bUD_PORT_EN;	// Enable USB Port
-				return;
-			}
     case BOT_ERROR:
       Bot_State = BOT_IDLE;
       //SetEPRxStatus(ENDP2, EP_RX_VALID);/* enable the Endpoint to receive the next cmd*/	
@@ -86,6 +81,12 @@ void Mass_Storage_In (void)
       // SetEPRxStatus(ENDP2, EP_RX_VALID);
 			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
       break;
+		case BOT_DATA_IN_LAST_FAIL:
+      Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+		led2=0;
+      // SetEPRxStatus(ENDP2, EP_RX_VALID);
+			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+      break;			
     default:
       break;
   }
@@ -309,10 +310,10 @@ void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len)
 
   // CSW.dDataResidue = ((uint16_t)CSW.dDataResidue) - Data_Len;
 	dDataResidue -= Data_Len;
-	((uint8_t*)(&CSW.dDataResidue))[0] = ((uint8_t*)&dDataResidue)[1];
-	((uint8_t*)(&CSW.dDataResidue))[1] = ((uint8_t*)&dDataResidue)[0];
-	((uint8_t*)(&CSW.dDataResidue))[2] = 0;
-	((uint8_t*)(&CSW.dDataResidue))[3] = 0;
+	((uint8_t*)(&CSW.dDataResidue))[0] = 0;
+	((uint8_t*)(&CSW.dDataResidue))[1] = 0;
+	((uint8_t*)(&CSW.dDataResidue))[2] = ((uint8_t*)&dDataResidue)[0];
+	((uint8_t*)(&CSW.dDataResidue))[3] = ((uint8_t*)&dDataResidue)[1];	
   CSW.bStatus = CSW_CMD_PASSED;
 }
 
@@ -335,11 +336,14 @@ void Set_CSW (uint8_t CSW_Status, uint8_t Send_Permission)
 	for (i = 0; i < CSW_DATA_LENGTH; i++) 
 		(EP3_TX_BUF)[i] = ((uint8_t *)&CSW)[i];
 	UEP3_T_LEN = CSW_DATA_LENGTH;
-	
+	(EP3_TX_BUF)[8] = ((uint8_t *)&CSW)[11];
+	(EP3_TX_BUF)[9] = ((uint8_t *)&CSW)[10];
+	(EP3_TX_BUF)[10] = ((uint8_t *)&CSW)[9];
+	(EP3_TX_BUF)[11] = ((uint8_t *)&CSW)[8];
 	
   Bot_State = BOT_ERROR;
   if (Send_Permission)
-  {
+  {		
     Bot_State = BOT_CSW_Send;
     // SetEPTxStatus(ENDP1, EP_TX_VALID);
 		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx

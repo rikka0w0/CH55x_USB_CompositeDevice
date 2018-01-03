@@ -69,6 +69,7 @@ Bulk_Only_CSW;
 #define BOT_DATA_IN_LAST              3       /* Last Data In Last */
 #define BOT_CSW_Send                  4       /* Command Status Wrapper */
 #define BOT_ERROR                     5       /* error state */
+#define BOT_DATA_IN_LAST_FAIL         6
 
 //#define BOT_CBW_SIGNATURE             0x43425355
 //#define BOT_CSW_SIGNATURE             0x53425355
