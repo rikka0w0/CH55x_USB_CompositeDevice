@@ -35,15 +35,15 @@
 #include "ch554.h"
 #include "types.h"
 
-sbit led = P1^7;
+sbit led = P1^7;sbit led2 = P1^6;
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* External variables --------------------------------------------------------*/
-extern uint8_t Bot_State;
+extern xdata uint8_t Bot_State;
 extern xdata Bulk_Only_CBW CBW;
-extern uint16_t dataResidue;
+extern xdata uint16_t dataResidue;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -51,7 +51,6 @@ extern uint16_t dataResidue;
 // Memory
 xdata uint32_t Block_Read_count = 0;
 xdata uint32_t Block_offset;
-xdata uint8_t Data_Buffer[512]; /* 512 bytes*/
 
 #define TXFR_IDLE     0
 #define TXFR_ONGOING  1
@@ -59,7 +58,7 @@ xdata uint8_t TransferState = TXFR_IDLE;
 
 void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
 {
-  static uint32_t Offset, Length;
+  static xdata uint32_t Offset, Length;
 	uint8_t i;
 	
   if (TransferState == TXFR_IDLE )
@@ -76,8 +75,8 @@ void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
       //MAL_Read(lun , Offset , Data_Buffer, Mass_Block_Size[lun]);
 
       // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer, BULK_MAX_PACKET_SIZE);
-			for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
-				(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer)[i];
+			//for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
+				//(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer)[i];
 			UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
 
       Block_Read_count = Mass_Block_Size[lun] - BULK_MAX_PACKET_SIZE;
@@ -86,8 +85,8 @@ void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
     else
     {
       // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer + Block_offset, BULK_MAX_PACKET_SIZE);
-			for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
-				(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer + Block_offset)[i];
+			//for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
+				//(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer + Block_offset)[i];
 			UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
 
       Block_Read_count -= BULK_MAX_PACKET_SIZE;
@@ -185,13 +184,13 @@ void SCSI_ReadFormatCapacity_Cmd(uint8_t lun)
 * Return         : None.
 *******************************************************************************/
 void SCSI_ReadCapacity10_Cmd(uint8_t lun)
-{
-  if (MAL_GetStatus(lun)) {
-    Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
-    Transfer_Failed_ReadWrite();
+{	
+	if (MAL_GetStatus(lun)) {
+		Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+		Transfer_Failed_ReadWrite();
 		return;
-  }
-		
+	}
+	
 	ReadCapacity10_Data[0] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 24);
 	ReadCapacity10_Data[1] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 16);
 	ReadCapacity10_Data[2] = (uint8_t)((Mass_Block_Count[lun] - 1) >>  8);
@@ -275,6 +274,7 @@ uint8_t dead=0;
 void SCSI_Start_Stop_Unit_Cmd(uint8_t lun) {
   Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
 	dead=1;
+	led2=0;
 }
 
 void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun) {
@@ -301,7 +301,7 @@ void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 			Transfer_Failed_ReadWrite();
 			return;
 		}
-		
+
     if (!(SCSI_Address_Management(CBW.bLUN, SCSI_READ10, LBA, BlockNbr)))/*address out of range*/
       return;
 

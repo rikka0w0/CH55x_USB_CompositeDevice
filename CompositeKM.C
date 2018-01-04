@@ -76,8 +76,10 @@ void USBDeviceInit()
 	  USB_CTRL = bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;	
 	  UDEV_CTRL |= bUD_PORT_EN;	// Enable USB Port
 		
-		UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
+		// Reset all tx length to 0
+		UEP1_T_LEN = 0;
     UEP2_T_LEN = 0;  
+		UEP3_T_LEN = 0;
 }
 /*******************************************************************************
 * Function Name  : Enp1IntIn()
@@ -168,7 +170,7 @@ void ConfigSysClock() {
 main()
 {
     ConfigSysClock();                                                           //CH559时钟选择配置
-    mDelaymS(5);                                                          //修改主频等待内部晶振稳定,必加	
+    mDelaymS(500);                                                          //修改主频等待内部晶振稳定,必加	
     mInitSTDIO( );                                                        //串口0初始化
 	
     printf("start ...\n");

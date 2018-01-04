@@ -4,6 +4,8 @@
 #include "CH554.h"
 #include <string.h>	// For memcpy()
 
+#include "usb_bot.h"
+
 // Used in SET_FEATURE and CLEAR_FEATURE 
 #define USB_FEATURE_ENDPOINT_HALT 0						// Endpoint only
 #define USB_FEATURE_DEVICE_REMOTE_WAKEUP 1		// Device only
@@ -147,12 +149,11 @@ void USB_EP0_SETUP(void) {
 				case 0x0B:		// SetProtocol
 					break;
 				case 0xFE:		// Get Max LUN
-					Ep0Buffer[0] = 0;
-					len = 1;
+					Ep0Buffer[0] = Bot_Get_Max_Lun();
+					len = 1;		// Always 1 byte reply
 					break;
 				case 0xFF:		// Bulk-Only Mass Storage Reset
-					//CBW.dSignature = BOT_CBW_SIGNATURE;
-					//Bot_State = BOT_IDLE;
+					Bot_MSR();
 					break;
 				default:
 					len = 0xFF;

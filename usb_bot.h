@@ -86,6 +86,9 @@ Bulk_Only_CBW;
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
+void Bot_MSR(void);
+uint8_t Bot_Get_Max_Lun(void);
+
 void Mass_Storage_In (void);
 void Mass_Storage_Out (void);
 void CBW_Decode(void);

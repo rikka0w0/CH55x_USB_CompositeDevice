@@ -36,20 +36,31 @@
 #include "ch554.h"
 #include <String.h>
 
-sbit led2 = P1^6;
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-uint8_t Bot_State = BOT_IDLE;
+xdata uint8_t Bot_State = BOT_IDLE;
 xdata Bulk_Only_CBW CBW;
-uint16_t dataResidue;
-uint32_t SCSI_LBA;
-uint16_t SCSI_BlkLen;
+xdata uint16_t dataResidue;
+xdata uint32_t SCSI_LBA;
+xdata uint16_t SCSI_BlkLen;
 /* Extern variables ----------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Extern function prototypes ------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+
+// Bulk-Only Mass Storage Reset
+void Bot_MSR(void) {
+	// UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG);
+	// UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG);
+	//CBW.dSignature = BOT_CBW_SIGNATURE;
+	//Bot_State = BOT_IDLE;
+}
+
+uint8_t Bot_Get_Max_Lun(void) {
+	return MAL_MAX_LUN;
+}
 
 /*******************************************************************************
 * Function Name  : Mass_Storage_In
@@ -82,7 +93,7 @@ void Mass_Storage_In (void)
       break;
 		case BOT_DATA_IN_LAST_FAIL:
       Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
-		led2=0;
+
       // SetEPRxStatus(ENDP2, EP_RX_VALID);
 			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
       break;			
@@ -100,6 +111,9 @@ void Mass_Storage_In (void)
 *******************************************************************************/
 void Mass_Storage_Out (void)
 {
+	if (!U_TOG_OK)
+		return;	// Discard unsychronized packets
+	
   switch (Bot_State)
   {
     case BOT_IDLE:
@@ -123,13 +137,6 @@ void Mass_Storage_Out (void)
   }
 }
 
-void L2B32(void* dest, const void* src, uint8_t offset) {
-	((uint8_t*)dest)[3] = ((uint8_t*)src)[offset++];
-	((uint8_t*)dest)[2] = ((uint8_t*)src)[offset++];
-	((uint8_t*)dest)[1] = ((uint8_t*)src)[offset++];
-	((uint8_t*)dest)[0] = ((uint8_t*)src)[offset];
-}
-
 /*******************************************************************************
 * Function Name  : CBW_Decode
 * Description    : Decode the received CBW and call the related SCSI command
@@ -146,34 +153,37 @@ void CBW_Decode(void)
 	for (i = 0; i < USB_RX_LEN; i++)
 		((uint8_t*)(&CBW))[i] = EP3_RX_BUF[i];
 	
-	L2B32(&(CBW.dDataLength), EP3_RX_BUF, 8);
-  dataResidue = CBW.dDataLength;
+	((uint8_t*)&(CBW.dDataLength))[3] = EP3_RX_BUF[8];
+	((uint8_t*)&(CBW.dDataLength))[2] = EP3_RX_BUF[9];
+	((uint8_t*)&(CBW.dDataLength))[1] = EP3_RX_BUF[10];
+	((uint8_t*)&(CBW.dDataLength))[0] = EP3_RX_BUF[11];
+	dataResidue = CBW.dDataLength;
 	
-  if (USB_RX_LEN != BOT_CBW_PACKET_LENGTH)	// EP3_RX_BUF
-  {
-    Bot_Abort(BOTH_DIR);
+	// NOTE: CH554 seems receive incorrect packet length!
+	// This needs to be confirmed! Might be a hardware problem
+  //if (USB_RX_LEN != BOT_CBW_PACKET_LENGTH) {// EP3_RX_BUF
+    //Bot_Abort(BOTH_DIR);
     /* reset the CBW.dSignature to disable the clear feature until receiving a Mass storage reset*/
-    CBW.dSignature = 0;
-    Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, PARAMETER_LIST_LENGTH_ERROR);
-    Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
+    //CBW.dSignature = 0;
+    //Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, PARAMETER_LIST_LENGTH_ERROR);
+    //Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
 		
-    return;
-  }
+    //return;
+  //}
 	
-   if ((CBW.CB[0] == SCSI_READ10 ) || (CBW.CB[0] == SCSI_WRITE10 ))
-   {
-     /* Calculate Logical Block Address */
+	if ((CBW.CB[0] == SCSI_READ10 ) || (CBW.CB[0] == SCSI_WRITE10 )) {
+		/* Calculate Logical Block Address */
 		// SCSI_LBA = (CBW.CB[2] << 24) | (CBW.CB[3] << 16) | (CBW.CB[4] <<  8) | CBW.CB[5];
-     ((uint8_t*)&SCSI_LBA)[0] = CBW.CB[2];
+		((uint8_t*)&SCSI_LBA)[0] = CBW.CB[2];
  		((uint8_t*)&SCSI_LBA)[1] = CBW.CB[3];
  		((uint8_t*)&SCSI_LBA)[2] = CBW.CB[4];
  		((uint8_t*)&SCSI_LBA)[3] = CBW.CB[5];
  		
-     /* Calculate the Number of Blocks to transfer */
+		/* Calculate the Number of Blocks to transfer */
 		// SCSI_BlkLen = (CBW.CB[7] <<  8) | CBW.CB[8];
 		((uint8_t*)&SCSI_BlkLen)[0] = CBW.CB[7];
 		((uint8_t*)&SCSI_BlkLen)[1] = CBW.CB[8];
-   }
+	}
 	
   if (CBW.dSignature == BOT_CBW_SIGNATURE)
   {
@@ -268,6 +278,7 @@ void CBW_Decode(void)
 
         default:
         {
+
           Bot_Abort(BOTH_DIR);
           Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_COMMAND);
           Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
