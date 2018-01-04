@@ -102,39 +102,4 @@ xdata uint8_t Scsi_Sense_Data[] =
     0x00,
     0x00 /*SenseKeySpecific*/
   };
-xdata uint8_t ReadCapacity10_Data[] =
-  {
-    /* Last Logical Block */
-    0,
-    0,
-    0,
-    0,
-
-    /* Block Length */
-    0,
-    0,
-    0,
-    0
-  };
-
-xdata uint8_t ReadFormatCapacity_Data [] =
-  {
-    0x00,
-    0x00,
-    0x00,
-    0x08, /* Capacity List Length */
-
-    /* Block Count */
-    0,
-    0,
-    0,
-    0,
-
-    /* Block Length */
-    0x02,/* Descriptor Code: Formatted Media */
-    0,
-    0,
-    0
-  };
-
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

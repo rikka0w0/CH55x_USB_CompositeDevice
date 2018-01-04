@@ -136,7 +136,7 @@ void Mass_Storage_Out (void)
       break;
   }
 }
-
+sbit led2 = P1^6;
 /*******************************************************************************
 * Function Name  : CBW_Decode
 * Description    : Decode the received CBW and call the related SCSI command
@@ -167,7 +167,6 @@ void CBW_Decode(void)
     //CBW.dSignature = 0;
     //Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, PARAMETER_LIST_LENGTH_ERROR);
     //Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
-		
     //return;
   //}
 	
@@ -303,7 +302,7 @@ void CBW_Decode(void)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len) {
+void Transfer_Data_Request(uint8_t* Data_Pointer, uint8_t Data_Len) {
 	dataResidue -= Data_Len;
 	
   // USB_SIL_Write(EP1_IN, Data_Pointer, Data_Len);
@@ -314,6 +313,13 @@ void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len) {
 	// SetEPTxStatus(ENDP1, EP_TX_VALID);
 	BOT_EP_Tx_Valid();	// Enable Tx
 	
+  Bot_State = BOT_DATA_IN_LAST;
+}
+
+void Reply_Request(uint8_t Data_Len) {
+	dataResidue -= Data_Len;
+	BOT_EP_Tx_Count(Data_Len);
+	BOT_EP_Tx_Valid();	// Enable Tx	
   Bot_State = BOT_DATA_IN_LAST;
 }
 

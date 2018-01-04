@@ -158,22 +158,29 @@ void SCSI_Inquiry_Cmd(uint8_t lun)
 *******************************************************************************/
 void SCSI_ReadFormatCapacity_Cmd(uint8_t lun)
 {
-  if (MAL_GetStatus(lun) != 0 )
-  {
+  if (MAL_GetStatus(lun) != 0 ) {
     Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
     Transfer_Failed_ReadWrite();
     return;
   }
 	
-  ReadFormatCapacity_Data[4] = (uint8_t)(Mass_Block_Count[lun] >> 24);
-  ReadFormatCapacity_Data[5] = (uint8_t)(Mass_Block_Count[lun] >> 16);
-  ReadFormatCapacity_Data[6] = (uint8_t)(Mass_Block_Count[lun] >>  8);
-  ReadFormatCapacity_Data[7] = (uint8_t)(Mass_Block_Count[lun]);
-
-  ReadFormatCapacity_Data[9] = (uint8_t)(Mass_Block_Size[lun] >>  16);
-  ReadFormatCapacity_Data[10] = (uint8_t)(Mass_Block_Size[lun] >>  8);
-  ReadFormatCapacity_Data[11] = (uint8_t)(Mass_Block_Size[lun]);
-  Transfer_Data_Request(ReadFormatCapacity_Data, READ_FORMAT_CAPACITY_DATA_LEN);
+	BOT_Tx_Buf[0] = 0x00;
+	BOT_Tx_Buf[1] = 0x00;
+	BOT_Tx_Buf[2] = 0x00;
+	BOT_Tx_Buf[3] = 0x08;	// Capacity List Length
+	
+	// Block Count
+  BOT_Tx_Buf[4] = (uint8_t)(Mass_Block_Count[lun] >> 24);
+  BOT_Tx_Buf[5] = (uint8_t)(Mass_Block_Count[lun] >> 16);
+  BOT_Tx_Buf[6] = (uint8_t)(Mass_Block_Count[lun] >>  8);
+  BOT_Tx_Buf[7] = (uint8_t)(Mass_Block_Count[lun]);
+	
+	// Block Length
+	BOT_Tx_Buf[8] = 0x02;	// Descriptor Code: Formatted Media
+  BOT_Tx_Buf[9] = (uint8_t)(Mass_Block_Size[lun] >>  16);
+  BOT_Tx_Buf[10] = (uint8_t)(Mass_Block_Size[lun] >>  8);
+  BOT_Tx_Buf[11] = (uint8_t)(Mass_Block_Size[lun]);
+  Reply_Request(READ_FORMAT_CAPACITY_DATA_LEN);
 }
 
 /*******************************************************************************
@@ -191,16 +198,18 @@ void SCSI_ReadCapacity10_Cmd(uint8_t lun)
 		return;
 	}
 	
-	ReadCapacity10_Data[0] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 24);
-	ReadCapacity10_Data[1] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 16);
-	ReadCapacity10_Data[2] = (uint8_t)((Mass_Block_Count[lun] - 1) >>  8);
-	ReadCapacity10_Data[3] = (uint8_t)(Mass_Block_Count[lun] - 1);
+	// Index of the last block,
+	BOT_Tx_Buf[0] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 24);
+	BOT_Tx_Buf[1] = (uint8_t)((Mass_Block_Count[lun] - 1) >> 16);
+	BOT_Tx_Buf[2] = (uint8_t)((Mass_Block_Count[lun] - 1) >>  8);
+	BOT_Tx_Buf[3] = (uint8_t)(Mass_Block_Count[lun] - 1);
 	
-	ReadCapacity10_Data[4] = (uint8_t)(Mass_Block_Size[lun] >>  24);
-	ReadCapacity10_Data[5] = (uint8_t)(Mass_Block_Size[lun] >>  16);
-	ReadCapacity10_Data[6] = (uint8_t)(Mass_Block_Size[lun] >>  8);
-	ReadCapacity10_Data[7] = (uint8_t)(Mass_Block_Size[lun]);
-	Transfer_Data_Request(ReadCapacity10_Data, READ_CAPACITY10_DATA_LEN);		
+	// Block Length
+	BOT_Tx_Buf[4] = (uint8_t)(Mass_Block_Size[lun] >>  24);
+	BOT_Tx_Buf[5] = (uint8_t)(Mass_Block_Size[lun] >>  16);
+	BOT_Tx_Buf[6] = (uint8_t)(Mass_Block_Size[lun] >>  8);
+	BOT_Tx_Buf[7] = (uint8_t)(Mass_Block_Size[lun]);
+	Reply_Request(READ_CAPACITY10_DATA_LEN);		
 }
 
 /*******************************************************************************

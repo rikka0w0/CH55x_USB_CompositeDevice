@@ -104,8 +104,6 @@ code const uint8_t Standard_Inquiry_Data[];
 code const uint8_t Mode_Sense6_data[];
 code const uint8_t Mode_Sense10_data[];
 xdata uint8_t Scsi_Sense_Data[];
-xdata uint8_t ReadCapacity10_Data[];
-xdata uint8_t ReadFormatCapacity_Data [];
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
