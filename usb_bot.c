@@ -34,7 +34,6 @@
 #include "usb_endp.h"
 #include "types.h"
 #include "ch554.h"
-#include <String.h>
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -52,8 +51,8 @@ xdata uint16_t SCSI_BlkLen;
 
 // Bulk-Only Mass Storage Reset
 void Bot_MSR(void) {
-	// UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG);
-	// UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG);
+	//BOT_EP_Tx_RTOG();
+	//BOT_EP_Rx_RTOG();
 	//CBW.dSignature = BOT_CBW_SIGNATURE;
 	//Bot_State = BOT_IDLE;
 }
@@ -76,8 +75,9 @@ void Mass_Storage_In (void)
     case BOT_CSW_Send:
     case BOT_ERROR:
       Bot_State = BOT_IDLE;
-      //SetEPRxStatus(ENDP2, EP_RX_VALID);/* enable the Endpoint to receive the next cmd*/	
-			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+			// Enable the Endpoint to receive the next cmd
+      // SetEPRxStatus(ENDP2, EP_RX_VALID);
+			BOT_EP_Rx_Valid();
       
       break;
     case BOT_DATA_IN:
@@ -89,13 +89,13 @@ void Mass_Storage_In (void)
       Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
 
       // SetEPRxStatus(ENDP2, EP_RX_VALID);
-			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+			BOT_EP_Rx_Valid();
       break;
 		case BOT_DATA_IN_LAST_FAIL:
       Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
 
       // SetEPRxStatus(ENDP2, EP_RX_VALID);
-			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+			BOT_EP_Rx_Valid();
       break;			
     default:
       break;
@@ -150,18 +150,18 @@ void CBW_Decode(void)
 	uint8_t i;
 
 	// Copy CBW from Endpoint Rx Buffer
-	for (i = 0; i < USB_RX_LEN; i++)
-		((uint8_t*)(&CBW))[i] = EP3_RX_BUF[i];
+	for (i = 0; i < BOT_EP_Rx_Length; i++)
+		((uint8_t*)(&CBW))[i] = BOT_Rx_Buf[i];
 	
-	((uint8_t*)&(CBW.dDataLength))[3] = EP3_RX_BUF[8];
-	((uint8_t*)&(CBW.dDataLength))[2] = EP3_RX_BUF[9];
-	((uint8_t*)&(CBW.dDataLength))[1] = EP3_RX_BUF[10];
-	((uint8_t*)&(CBW.dDataLength))[0] = EP3_RX_BUF[11];
+	((uint8_t*)&(CBW.dDataLength))[3] = BOT_Rx_Buf[8];
+	((uint8_t*)&(CBW.dDataLength))[2] = BOT_Rx_Buf[9];
+	((uint8_t*)&(CBW.dDataLength))[1] = BOT_Rx_Buf[10];
+	((uint8_t*)&(CBW.dDataLength))[0] = BOT_Rx_Buf[11];
 	dataResidue = CBW.dDataLength;
 	
 	// NOTE: CH554 seems receive incorrect packet length!
 	// This needs to be confirmed! Might be a hardware problem
-  //if (USB_RX_LEN != BOT_CBW_PACKET_LENGTH) {// EP3_RX_BUF
+  //if (BOT_EP_Rx_Length != BOT_CBW_PACKET_LENGTH) {
     //Bot_Abort(BOTH_DIR);
     /* reset the CBW.dSignature to disable the clear feature until receiving a Mass storage reset*/
     //CBW.dSignature = 0;
@@ -303,23 +303,23 @@ void CBW_Decode(void)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len)
-{	
-//	uint16_t dDataResidue = CSW.dDataResidue;
-  // USB_SIL_Write(EP1_IN, Data_Pointer, Data_Len);
-	memcpy(EP3_TX_BUF, Data_Pointer, Data_Len);
-	UEP3_T_LEN = Data_Len;
-	// SetEPTxStatus(ENDP1, EP_TX_VALID);
-	UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx
-	
+void Transfer_Data_Request(uint8_t* Data_Pointer, uint16_t Data_Len) {
 	dataResidue -= Data_Len;
+	
+  // USB_SIL_Write(EP1_IN, Data_Pointer, Data_Len);
+	BOT_EP_Tx_Count(Data_Len);
+	while (Data_Len--)
+		BOT_Tx_Buf[Data_Len] = Data_Pointer[Data_Len];
+	
+	// SetEPTxStatus(ENDP1, EP_TX_VALID);
+	BOT_EP_Tx_Valid();	// Enable Tx
 	
   Bot_State = BOT_DATA_IN_LAST;
 }
 
 void Transfer_Failed_ReadWrite(void) {
-	UEP3_T_LEN = 0;		// Send an empty packet
-	UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx	
+	BOT_EP_Tx_Count(0);	// Send an empty packet
+	BOT_EP_Tx_Valid();	// Enable Tx	
 	
 	Bot_State = BOT_DATA_IN_LAST_FAIL;
 }
@@ -335,33 +335,33 @@ void Transfer_Failed_ReadWrite(void) {
 void Set_CSW (uint8_t CSW_Status, uint8_t Send_Permission)
 {
 	// Make CSW
-	UEP3_T_LEN = CSW_DATA_LENGTH;
+	BOT_EP_Tx_Count(CSW_DATA_LENGTH);
 	// CSW.dSignature
-	EP3_TX_BUF[0] = BOT_CSW_SIGNATURE0;
-	EP3_TX_BUF[1] = BOT_CSW_SIGNATURE1;
-	EP3_TX_BUF[2] = BOT_CSW_SIGNATURE2;
-	EP3_TX_BUF[3] = BOT_CSW_SIGNATURE3;
+	BOT_Tx_Buf[0] = BOT_CSW_SIGNATURE0;
+	BOT_Tx_Buf[1] = BOT_CSW_SIGNATURE1;
+	BOT_Tx_Buf[2] = BOT_CSW_SIGNATURE2;
+	BOT_Tx_Buf[3] = BOT_CSW_SIGNATURE3;
 	
 	// CSW.dTag
-	EP3_TX_BUF[4] = ((uint8_t *)&CBW.dTag)[0];
-	EP3_TX_BUF[5] = ((uint8_t *)&CBW.dTag)[1];
-	EP3_TX_BUF[6] = ((uint8_t *)&CBW.dTag)[2];
-	EP3_TX_BUF[7] = ((uint8_t *)&CBW.dTag)[3];
+	BOT_Tx_Buf[4] = ((uint8_t *)&CBW.dTag)[0];
+	BOT_Tx_Buf[5] = ((uint8_t *)&CBW.dTag)[1];
+	BOT_Tx_Buf[6] = ((uint8_t *)&CBW.dTag)[2];
+	BOT_Tx_Buf[7] = ((uint8_t *)&CBW.dTag)[3];
 	
 	// CSW.dDataResidue
-	EP3_TX_BUF[8] = ((uint8_t *)&dataResidue)[1];
-	EP3_TX_BUF[9] = ((uint8_t *)&dataResidue)[0];
-	EP3_TX_BUF[10] = 0;
-	EP3_TX_BUF[11] = 0;
+	BOT_Tx_Buf[8] = ((uint8_t *)&dataResidue)[1];
+	BOT_Tx_Buf[9] = ((uint8_t *)&dataResidue)[0];
+	BOT_Tx_Buf[10] = 0;
+	BOT_Tx_Buf[11] = 0;
 	
 	// CSW.bStatus
-	EP3_TX_BUF[12] = CSW_Status;
+	BOT_Tx_Buf[12] = CSW_Status;
 	
   Bot_State = BOT_ERROR;
   if (Send_Permission) {		
     Bot_State = BOT_CSW_Send;
     // SetEPTxStatus(ENDP1, EP_TX_VALID);
-		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx
+		BOT_EP_Tx_Valid();	// Enable Tx
   }
 }
 
@@ -378,17 +378,17 @@ void Bot_Abort(uint8_t Direction)
   {
     case DIR_IN :
       // SetEPTxStatus(ENDP1, EP_TX_STALL);
-			UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;
+			BOT_EP_Tx_Stall();
       break;
     case DIR_OUT :
       // SetEPRxStatus(ENDP2, EP_RX_STALL);
-			UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;
+			BOT_EP_Rx_Stall();
       break;
     case BOTH_DIR :
       // SetEPTxStatus(ENDP1, EP_TX_STALL);
-			UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;
+			BOT_EP_Tx_Stall();
       // SetEPRxStatus(ENDP2, EP_RX_STALL);
-			UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;
+			BOT_EP_Rx_Stall();
       break;
     default:
       break;

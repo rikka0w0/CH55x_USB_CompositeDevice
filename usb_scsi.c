@@ -77,7 +77,7 @@ void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
       // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer, BULK_MAX_PACKET_SIZE);
 			//for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
 				//(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer)[i];
-			UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
+			BOT_EP_Tx_Count(BULK_MAX_PACKET_SIZE);
 
       Block_Read_count = Mass_Block_Size[lun] - BULK_MAX_PACKET_SIZE;
       Block_offset = BULK_MAX_PACKET_SIZE;
@@ -87,16 +87,16 @@ void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
       // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer + Block_offset, BULK_MAX_PACKET_SIZE);
 			//for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
 				//(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer + Block_offset)[i];
-			UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
+			BOT_EP_Tx_Count(BULK_MAX_PACKET_SIZE);
 
       Block_Read_count -= BULK_MAX_PACKET_SIZE;
       Block_offset += BULK_MAX_PACKET_SIZE;
     }
 
     // SetEPTxCount(ENDP1, BULK_MAX_PACKET_SIZE);
-		UEP3_T_LEN = BULK_MAX_PACKET_SIZE;
+		BOT_EP_Tx_Count(BULK_MAX_PACKET_SIZE);
     // SetEPTxStatus(ENDP1, EP_TX_VALID);
-		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx
+		BOT_EP_Tx_Valid();	// Enable Tx
 		
     Offset += BULK_MAX_PACKET_SIZE;
     Length -= BULK_MAX_PACKET_SIZE;
@@ -341,7 +341,7 @@ void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr)
       Bot_State = BOT_DATA_OUT;
 			
       // SetEPRxStatus(ENDP2, EP_RX_VALID);
-			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+			BOT_EP_Rx_Valid();
     }
     else
     {

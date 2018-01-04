@@ -32,6 +32,20 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "types.h"
+
+// BOT_USB Config
+#define BOT_Rx_Buf EP3_RX_BUF
+#define BOT_Tx_Buf EP3_TX_BUF
+#define BULK_MAX_PACKET_SIZE EP3_SIZE
+#define BOT_EP_Tx_RTOG()	{UEP3_CTRL &= ~bUEP_T_TOG;}
+#define BOT_EP_Rx_RTOG()	{UEP3_CTRL &= ~bUEP_R_TOG;}
+#define BOT_EP_Tx_Valid()	{UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;}
+#define BOT_EP_Rx_Valid()	{UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;}
+#define BOT_EP_Tx_Stall()	{UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;}
+#define BOT_EP_Rx_Stall()	{UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;}
+#define BOT_EP_Tx_Count(val) {UEP3_T_LEN = val;}
+#define BOT_EP_Rx_Length	USB_RX_LEN
+
 /* Exported types ------------------------------------------------------------*/
 /* Bulk-only Command Block Wrapper */
 
@@ -48,8 +62,6 @@ typedef struct _Bulk_Only_CBW
 Bulk_Only_CBW;
 
 /* Exported constants --------------------------------------------------------*/
-
-#define BULK_MAX_PACKET_SIZE 0x40
 
 /*****************************************************************************/
 /*********************** Bulk-Only Transfer State machine ********************/

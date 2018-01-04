@@ -94,7 +94,7 @@
 #define READ_FORMAT_CAPACITY_DATA_LEN               0x0C
 #define READ_CAPACITY10_DATA_LEN                    0x08
 #define MODE_SENSE10_DATA_LEN                       0x08
-#define MODE_SENSE6_DATA_LEN                        0x10
+#define MODE_SENSE6_DATA_LEN                        0x04
 #define REQUEST_SENSE_DATA_LEN                      0x12
 #define STANDARD_INQUIRY_DATA_LEN                   0x24
 #define BLKVFY                                      0x04
