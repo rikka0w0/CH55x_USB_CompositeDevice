@@ -17,7 +17,7 @@ sbit Ep2InKey = P1^5;
 
 
 /*键盘数据*/
-UINT8 HIDKey[8] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
+xdata unsigned char HIDKey[8] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 
 
 /*******************************************************************************
@@ -167,6 +167,8 @@ void ConfigSysClock() {
 	SAFE_MOD = 0x00;	
 }
 
+extern void EEPROM_Init(void);
+
 main()
 {
     ConfigSysClock();                                                           //CH559时钟选择配置
@@ -176,6 +178,7 @@ main()
     printf("start ...\n");
 	
     USBDeviceInit();                                                      //USB设备模式初始化
+		//EEPROM_Init();
     EA = 1;                                                               //允许单片机中断
     FLAG = 0;
     Ready = 0;

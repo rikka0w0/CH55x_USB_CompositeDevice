@@ -136,7 +136,7 @@ void Mass_Storage_Out (void)
       break;
   }
 }
-sbit led2 = P1^6;
+
 /*******************************************************************************
 * Function Name  : CBW_Decode
 * Description    : Decode the received CBW and call the related SCSI command

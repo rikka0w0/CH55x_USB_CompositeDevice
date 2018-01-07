@@ -31,11 +31,13 @@
 #include "usb_bot.h"
 #include "usb_mal.h"
 
+#include "i2c.h"
+
 #include "usb_endp.h"
 #include "ch554.h"
 #include "types.h"
 
-sbit led = P1^7;sbit led2 = P1^6;
+sbit led = P1^1;sbit led2 = P1^0;
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -49,69 +51,161 @@ extern xdata uint16_t dataResidue;
 /* Private functions ---------------------------------------------------------*/
 
 // Memory
-xdata uint32_t Block_Read_count = 0;
-xdata uint32_t Block_offset;
-
 #define TXFR_IDLE     0
 #define TXFR_ONGOING  1
 xdata uint8_t TransferState = TXFR_IDLE;
+#define EEPROM_ADDR 0xA0
+extern xdata uint8_t I2C_Buf;
 
-void Read_Memory(uint8_t lun, uint32_t LBA, uint32_t BlockNbr)
-{
-  static xdata uint32_t Offset, Length;
-	uint8_t i;
+void EEPROM_Read(uint8_t* buf, uint8_t AddrH, uint8_t AddrL, uint8_t length) {
+	I2C_Send_Start();
+	I2C_Buf = EEPROM_ADDR;
+	I2C_WriteByte();
+	I2C_WaitForACK();
 	
-  if (TransferState == TXFR_IDLE )
-  {
-    Offset = LBA * Mass_Block_Size[lun];
-    Length = BlockNbr * Mass_Block_Size[lun];
-    TransferState = TXFR_ONGOING;
+	I2C_Buf = AddrH;
+	I2C_WriteByte();	// Address H
+	I2C_WaitForACK();
+	
+	I2C_Buf = AddrL;
+	I2C_WriteByte();	// Address L
+	I2C_WaitForACK();
+	
+	I2C_Send_Start();
+	I2C_Buf = EEPROM_ADDR|1;
+	I2C_WriteByte(); //Read
+	I2C_WaitForACK();
+	
+	AddrH = length-1;			// Length
+	for (AddrL=0; AddrL<AddrH; AddrL++) {
+		I2C_ReadByte();
+		buf[AddrL] = I2C_Buf;
+		I2C_Send_ACK();
+	}
+	I2C_ReadByte();
+	buf[AddrH] = I2C_Buf;
+	I2C_Send_NACK();
+	I2C_Send_Stop();	
+}
+
+/*******************************************************************************
+* Function Name  : SCSI_Read10_Cmd
+* Description    : SCSI Read10 Command routine.
+* Input          : None.
+* Output         : None.
+* Return         : None.
+*******************************************************************************/
+void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
+	static xdata uint32_t curAddr, endAddr;	
+	uint8_t dat = 0xA0;
+  
+	if (Bot_State == BOT_IDLE) {
+		if (MAL_GetStatus(lun)) {
+			Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+			Transfer_Failed_ReadWrite();
+			return;
+		}
+
+    if (!(SCSI_Address_Management(CBW.bLUN, SCSI_READ10, LBA, BlockNbr)))/*address out of range*/
+      return;
+
+    if ((CBW.bmFlags & 0x80) != 0) {
+      Bot_State = BOT_DATA_IN;
+    } else {
+      Bot_Abort(BOTH_DIR);
+      Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+      Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
+			return;
+    }
   }
-
-  if (TransferState == TXFR_ONGOING )
-  {
-    if (!Block_Read_count)
-    {
-      //MAL_Read(lun , Offset , Data_Buffer, Mass_Block_Size[lun]);
-
-      // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer, BULK_MAX_PACKET_SIZE);
-			//for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
-				//(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer)[i];
-			BOT_EP_Tx_Count(BULK_MAX_PACKET_SIZE);
-
-      Block_Read_count = Mass_Block_Size[lun] - BULK_MAX_PACKET_SIZE;
-      Block_offset = BULK_MAX_PACKET_SIZE;
-    }
-    else
-    {
-      // USB_SIL_Write(EP1_IN, (uint8_t *)Data_Buffer + Block_offset, BULK_MAX_PACKET_SIZE);
-			//for (i = 0; i < BULK_MAX_PACKET_SIZE; i++) 
-				//(EP3_TX_BUF)[i] = ((uint8_t *)Data_Buffer + Block_offset)[i];
-			BOT_EP_Tx_Count(BULK_MAX_PACKET_SIZE);
-
-      Block_Read_count -= BULK_MAX_PACKET_SIZE;
-      Block_offset += BULK_MAX_PACKET_SIZE;
-    }
-
-    // SetEPTxCount(ENDP1, BULK_MAX_PACKET_SIZE);
-		BOT_EP_Tx_Count(BULK_MAX_PACKET_SIZE);
-    // SetEPTxStatus(ENDP1, EP_TX_VALID);
-		BOT_EP_Tx_Valid();	// Enable Tx
+	
+	
+  if (Bot_State == BOT_DATA_IN) {
+		uint8_t i;
 		
-    Offset += BULK_MAX_PACKET_SIZE;
-    Length -= BULK_MAX_PACKET_SIZE;
+		if (TransferState == TXFR_IDLE ) {
+			curAddr = LBA * Mass_Block_Size[lun];
+			endAddr = curAddr + BlockNbr * Mass_Block_Size[lun];
+			TransferState = TXFR_ONGOING;
+		}
 
-    dataResidue -= BULK_MAX_PACKET_SIZE;
-    led=0;
-  }
-  if (Length == 0)
-  {
-    Block_Read_count = 0;
-    Block_offset = 0;
-    Offset = 0;
-    Bot_State = BOT_DATA_IN_LAST;
-    TransferState = TXFR_IDLE;
-    led=1;
+		if (TransferState == TXFR_ONGOING ) {
+			led=0;
+						
+			EEPROM_Read(EP3_TX_BUF, ((uint8_t*)&curAddr)[2], ((uint8_t*)&curAddr)[3], BULK_MAX_PACKET_SIZE);
+
+			curAddr += BULK_MAX_PACKET_SIZE;
+			dataResidue -= BULK_MAX_PACKET_SIZE;
+
+			// SetEPTxCount(ENDP1, BULK_MAX_PACKET_SIZE);
+			BOT_EP_Tx_Count(BULK_MAX_PACKET_SIZE);
+			// SetEPTxStatus(ENDP1, EP_TX_VALID);
+			BOT_EP_Tx_Valid();	// Enable Tx
+					
+			if (curAddr >= endAddr) {
+				led=1;	
+				curAddr = 0;
+				endAddr = 0;
+				Bot_State = BOT_DATA_IN_LAST;
+				TransferState = TXFR_IDLE;
+			}
+		}		
+		
+	}
+}
+
+/*******************************************************************************
+* Function Name  : SCSI_Write10_Cmd
+* Description    : SCSI Write10 Command routine.
+* Input          : None.
+* Output         : None.
+* Return         : None.
+*******************************************************************************/
+void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
+	static xdata uint32_t curAddr, endAddr;	
+	
+  if (Bot_State == BOT_IDLE) {
+    if (!(SCSI_Address_Management(CBW.bLUN, SCSI_WRITE10 , LBA, BlockNbr)))/*address out of range*/
+      return;
+
+    if ((CBW.bmFlags & 0x80) == 0) {
+      Bot_State = BOT_DATA_OUT;
+			
+      // SetEPRxStatus(ENDP2, EP_RX_VALID);
+			BOT_EP_Rx_Valid();
+    } else {
+      Bot_Abort(DIR_IN);
+      Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+      Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
+    }
+		
+    return;
+  } else if (Bot_State == BOT_DATA_OUT) {
+		if (TransferState == TXFR_IDLE ) {
+			curAddr = LBA * Mass_Block_Size[lun];
+			endAddr = curAddr + BlockNbr * Mass_Block_Size[lun];
+			TransferState = TXFR_ONGOING;
+		}
+		
+		if (TransferState == TXFR_ONGOING )	{
+			led=0;
+			
+			// EEPROM_Write = EP3_RX_BUF
+			
+			curAddr += BULK_MAX_PACKET_SIZE;
+			dataResidue -= BULK_MAX_PACKET_SIZE;
+			
+			// SetEPRxStatus(ENDP2, EP_RX_VALID);
+			BOT_EP_Rx_Valid();
+			
+			if (curAddr >= endAddr) {
+				led=1;
+				curAddr = 0;
+				endAddr = 0;
+				TransferState = TXFR_IDLE;
+				Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
+			}
+		}		
   }
 }
 
@@ -293,77 +387,6 @@ void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun) {
 	} else {
 		Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
 	}
-}
-
-
-/*******************************************************************************
-* Function Name  : SCSI_Read10_Cmd
-* Description    : SCSI Read10 Command routine.
-* Input          : None.
-* Output         : None.
-* Return         : None.
-*******************************************************************************/
-void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
-  if (Bot_State == BOT_IDLE) {
-		if (MAL_GetStatus(lun)) {
-			Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
-			Transfer_Failed_ReadWrite();
-			return;
-		}
-
-    if (!(SCSI_Address_Management(CBW.bLUN, SCSI_READ10, LBA, BlockNbr)))/*address out of range*/
-      return;
-
-    if ((CBW.bmFlags & 0x80) != 0) {
-      Bot_State = BOT_DATA_IN;
-    } else {
-      Bot_Abort(BOTH_DIR);
-      Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
-      Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
-			return;
-    }
-  }
-	
-	
-  if (Bot_State == BOT_DATA_IN)
-    Read_Memory(lun , LBA , BlockNbr);
-}
-
-/*******************************************************************************
-* Function Name  : SCSI_Write10_Cmd
-* Description    : SCSI Write10 Command routine.
-* Input          : None.
-* Output         : None.
-* Return         : None.
-*******************************************************************************/
-void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr)
-{
-  if (Bot_State == BOT_IDLE)
-  {
-    if (!(SCSI_Address_Management(CBW.bLUN, SCSI_WRITE10 , LBA, BlockNbr)))/*address out of range*/
-    {
-      return;
-    }
-
-    if ((CBW.bmFlags & 0x80) == 0)
-    {
-      Bot_State = BOT_DATA_OUT;
-			
-      // SetEPRxStatus(ENDP2, EP_RX_VALID);
-			BOT_EP_Rx_Valid();
-    }
-    else
-    {
-      Bot_Abort(DIR_IN);
-      Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
-      Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
-    }
-    return;
-  }
-  else if (Bot_State == BOT_DATA_OUT)
-  {
-    // Write_Memory(lun , LBA , BlockNbr);
-  }
 }
 
 /*******************************************************************************

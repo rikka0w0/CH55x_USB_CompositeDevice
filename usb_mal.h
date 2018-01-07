@@ -12,6 +12,5 @@ xdata uint32_t Mass_Block_Size[];
 xdata uint32_t Mass_Block_Count[];
 
 uint8_t MAL_GetStatus(uint8_t lun);
-uint8_t MAL_Read(uint8_t lun, uint32_t Memory_Offset, uint8_t *Readbuff, uint16_t Transfer_Length);
 
 #endif /* __USB_MAL_H */

@@ -1,6 +1,10 @@
 #include "types.h"
+#include "ch554.h"
 
+#include "i2c.h"
+#include "eeprom.h"
 #include "usb_mal.h"
+#include "usb_endp.h"
 
 xdata uint32_t Mass_Block_Size[MAL_MAX_LUN+1];
 xdata uint32_t Mass_Block_Count[MAL_MAX_LUN+1];
@@ -17,8 +21,4 @@ uint8_t MAL_GetStatus (uint8_t lun) {
 		 default:
 			 return MAL_FAIL;
 	 }
-}
-
-uint8_t MAL_Read(uint8_t lun, uint32_t Memory_Offset, uint8_t *Readbuff, uint16_t Transfer_Length) {
-	return MAL_OK;
 }
