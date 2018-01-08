@@ -188,12 +188,15 @@ void I2C_ReadByte(void) {
 	I2C_DELAY();
 }
 
-void I2C_WaitForACK(void){
+void I2C_CheckACK(void){
 	// I2C_SCL = L
 	I2C_SCL_H();
 	I2C_DELAY();
-	while (I2C_SDA())
-		I2C_DELAY();
+	
+	I2C_Buf = 0;
+	if (I2C_SDA() == 1)
+		I2C_Buf = 1;
+	
 	I2C_SCL_L();
 	I2C_DELAY();
 }

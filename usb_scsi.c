@@ -55,26 +55,29 @@ extern xdata uint16_t dataResidue;
 #define TXFR_ONGOING  1
 xdata uint8_t TransferState = TXFR_IDLE;
 #define EEPROM_ADDR 0xA0
+
 extern xdata uint8_t I2C_Buf;
 
 void EEPROM_Read(uint8_t* buf, uint8_t AddrH, uint8_t AddrL, uint8_t length) {
-	I2C_Send_Start();
-	I2C_Buf = EEPROM_ADDR;
-	I2C_WriteByte();
-	I2C_WaitForACK();
+	do {
+		I2C_Send_Start();	
+		I2C_Buf = EEPROM_ADDR;
+		I2C_WriteByte();
+		I2C_CheckACK();
+	} while (I2C_Buf);
 	
 	I2C_Buf = AddrH;
 	I2C_WriteByte();	// Address H
-	I2C_WaitForACK();
+	I2C_CheckACK();
 	
 	I2C_Buf = AddrL;
 	I2C_WriteByte();	// Address L
-	I2C_WaitForACK();
+	I2C_CheckACK();
 	
 	I2C_Send_Start();
 	I2C_Buf = EEPROM_ADDR|1;
 	I2C_WriteByte(); //Read
-	I2C_WaitForACK();
+	I2C_CheckACK();
 	
 	AddrH = length-1;			// Length
 	for (AddrL=0; AddrL<AddrH; AddrL++) {
@@ -85,7 +88,32 @@ void EEPROM_Read(uint8_t* buf, uint8_t AddrH, uint8_t AddrL, uint8_t length) {
 	I2C_ReadByte();
 	buf[AddrH] = I2C_Buf;
 	I2C_Send_NACK();
-	I2C_Send_Stop();	
+	I2C_Send_Stop();
+}
+
+void EEPROM_Write(uint8_t* buf, uint8_t AddrH, uint8_t AddrL, uint8_t length) {
+	do {
+		I2C_Send_Start();		
+		I2C_Buf = EEPROM_ADDR;
+		I2C_WriteByte();
+		I2C_CheckACK();
+	} while (I2C_Buf);
+	
+	I2C_Buf = AddrH;
+	I2C_WriteByte();	// Address H
+	I2C_CheckACK();
+	
+	I2C_Buf = AddrL;
+	I2C_WriteByte();	// Address L
+	I2C_CheckACK();
+	
+	for (AddrL=0; AddrL<length; AddrL++) {
+		I2C_Buf = buf[AddrL];
+		I2C_WriteByte();	// Data byte
+		I2C_CheckACK();
+	}
+	
+	I2C_Send_Stop();
 }
 
 /*******************************************************************************
@@ -190,7 +218,8 @@ void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 		if (TransferState == TXFR_ONGOING )	{
 			led=0;
 			
-			// EEPROM_Write = EP3_RX_BUF
+			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_NAK;
+			EEPROM_Write(EP3_RX_BUF, ((uint8_t*)&curAddr)[2], ((uint8_t*)&curAddr)[3], BULK_MAX_PACKET_SIZE);
 			
 			curAddr += BULK_MAX_PACKET_SIZE;
 			dataResidue -= BULK_MAX_PACKET_SIZE;

@@ -19,6 +19,6 @@ void I2C_Send_ACK(void);
 void I2C_Send_NACK(void);
 void I2C_WriteByte();
 void I2C_ReadByte(void);
-void I2C_WaitForACK(void);
+void I2C_CheckACK(void);
 
 #endif
