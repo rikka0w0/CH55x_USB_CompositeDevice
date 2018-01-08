@@ -3,22 +3,26 @@
 
 #include "types.h"
 
+extern xdata uint8_t I2C_Buf;
 
-#define I2C_SDA()	(sda_pin==1)
-#define I2C_SDA_H()	{sda_pin = 1;}
-#define I2C_SDA_L()	{sda_pin = 0;}
-#define I2C_SCL_H()	{scl_pin = 1;}
-#define I2C_SCL_L()	{scl_pin = 0;}
-//#define I2C_DELAY() {}
-
-void I2C_DELAY(void);
 void I2C_Init(void);
+
+// Generate a I2C start sequence
 void I2C_Send_Start(void);
-void I2C_Send_Stop(void);
-void I2C_Send_ACK(void);
-void I2C_Send_NACK(void);
+// Write a byte (stored in I2C_Buf) to I2C bus and return the ACK status in I2C_Buf
+// xxxx xxx(ACK bit)
+// ACK bit = 0 -> ACK received
+// ACK bit = 1 -> NACK received
 void I2C_WriteByte();
+
+// Read a byte from I2C bus and store the result into I2C_Buf
 void I2C_ReadByte(void);
-void I2C_CheckACK(void);
+// Send a ACK to I2C bus
+void I2C_Send_ACK(void);
+// Send a NACK to I2C bus
+void I2C_Send_NACK(void);
+
+// Generate a I2C stop condition, release the bus
+void I2C_Send_Stop(void);
 
 #endif

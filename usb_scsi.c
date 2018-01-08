@@ -31,7 +31,7 @@
 #include "usb_bot.h"
 #include "usb_mal.h"
 
-#include "i2c.h"
+#include "eeprom.h"
 
 #include "usb_endp.h"
 #include "ch554.h"
@@ -39,9 +39,13 @@
 
 sbit led = P1^1;sbit led2 = P1^0;
 /* Private typedef -----------------------------------------------------------*/
+#define RW_LED_ON() led=0
+#define RW_LED_OFF() led=1
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+xdata uint8_t Sense_Key[MAL_MAX_LUN+1];
+xdata uint8_t Sense_Asc[MAL_MAX_LUN+1];
 /* External variables --------------------------------------------------------*/
 extern xdata uint8_t Bot_State;
 extern xdata Bulk_Only_CBW CBW;
@@ -54,67 +58,7 @@ extern xdata uint16_t dataResidue;
 #define TXFR_IDLE     0
 #define TXFR_ONGOING  1
 xdata uint8_t TransferState = TXFR_IDLE;
-#define EEPROM_ADDR 0xA0
-
-extern xdata uint8_t I2C_Buf;
-
-void EEPROM_Read(uint8_t* buf, uint8_t AddrH, uint8_t AddrL, uint8_t length) {
-	do {
-		I2C_Send_Start();	
-		I2C_Buf = EEPROM_ADDR;
-		I2C_WriteByte();
-		I2C_CheckACK();
-	} while (I2C_Buf);
-	
-	I2C_Buf = AddrH;
-	I2C_WriteByte();	// Address H
-	I2C_CheckACK();
-	
-	I2C_Buf = AddrL;
-	I2C_WriteByte();	// Address L
-	I2C_CheckACK();
-	
-	I2C_Send_Start();
-	I2C_Buf = EEPROM_ADDR|1;
-	I2C_WriteByte(); //Read
-	I2C_CheckACK();
-	
-	AddrH = length-1;			// Length
-	for (AddrL=0; AddrL<AddrH; AddrL++) {
-		I2C_ReadByte();
-		buf[AddrL] = I2C_Buf;
-		I2C_Send_ACK();
-	}
-	I2C_ReadByte();
-	buf[AddrH] = I2C_Buf;
-	I2C_Send_NACK();
-	I2C_Send_Stop();
-}
-
-void EEPROM_Write(uint8_t* buf, uint8_t AddrH, uint8_t AddrL, uint8_t length) {
-	do {
-		I2C_Send_Start();		
-		I2C_Buf = EEPROM_ADDR;
-		I2C_WriteByte();
-		I2C_CheckACK();
-	} while (I2C_Buf);
-	
-	I2C_Buf = AddrH;
-	I2C_WriteByte();	// Address H
-	I2C_CheckACK();
-	
-	I2C_Buf = AddrL;
-	I2C_WriteByte();	// Address L
-	I2C_CheckACK();
-	
-	for (AddrL=0; AddrL<length; AddrL++) {
-		I2C_Buf = buf[AddrL];
-		I2C_WriteByte();	// Data byte
-		I2C_CheckACK();
-	}
-	
-	I2C_Send_Stop();
-}
+xdata uint32_t curAddr, endAddr;	
 
 /*******************************************************************************
 * Function Name  : SCSI_Read10_Cmd
@@ -124,24 +68,21 @@ void EEPROM_Write(uint8_t* buf, uint8_t AddrH, uint8_t AddrL, uint8_t length) {
 * Return         : None.
 *******************************************************************************/
 void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
-	static xdata uint32_t curAddr, endAddr;	
-	uint8_t dat = 0xA0;
-  
 	if (Bot_State == BOT_IDLE) {
 		if (MAL_GetStatus(lun)) {
-			Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+			Set_Scsi_Sense_Data(lun, NOT_READY, MEDIUM_NOT_PRESENT);
 			Transfer_Failed_ReadWrite();
 			return;
 		}
 
-    if (!(SCSI_Address_Management(CBW.bLUN, SCSI_READ10, LBA, BlockNbr)))/*address out of range*/
+    if (!(SCSI_Address_Management(lun, SCSI_READ10, LBA, BlockNbr)))/*address out of range*/
       return;
 
     if ((CBW.bmFlags & 0x80) != 0) {
       Bot_State = BOT_DATA_IN;
     } else {
       Bot_Abort(BOTH_DIR);
-      Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+      Set_Scsi_Sense_Data(lun, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
       Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
 			return;
     }
@@ -158,7 +99,7 @@ void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 		}
 
 		if (TransferState == TXFR_ONGOING ) {
-			led=0;
+			RW_LED_ON();
 						
 			EEPROM_Read(EP3_TX_BUF, ((uint8_t*)&curAddr)[2], ((uint8_t*)&curAddr)[3], BULK_MAX_PACKET_SIZE);
 
@@ -171,7 +112,7 @@ void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 			BOT_EP_Tx_Valid();	// Enable Tx
 					
 			if (curAddr >= endAddr) {
-				led=1;	
+				RW_LED_OFF();
 				curAddr = 0;
 				endAddr = 0;
 				Bot_State = BOT_DATA_IN_LAST;
@@ -190,10 +131,8 @@ void SCSI_Read10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 * Return         : None.
 *******************************************************************************/
 void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
-	static xdata uint32_t curAddr, endAddr;	
-	
   if (Bot_State == BOT_IDLE) {
-    if (!(SCSI_Address_Management(CBW.bLUN, SCSI_WRITE10 , LBA, BlockNbr)))/*address out of range*/
+    if (!(SCSI_Address_Management(lun, SCSI_WRITE10 , LBA, BlockNbr)))/*address out of range*/
       return;
 
     if ((CBW.bmFlags & 0x80) == 0) {
@@ -203,7 +142,7 @@ void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 			BOT_EP_Rx_Valid();
     } else {
       Bot_Abort(DIR_IN);
-      Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+      Set_Scsi_Sense_Data(lun, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
       Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
     }
 		
@@ -216,9 +155,8 @@ void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 		}
 		
 		if (TransferState == TXFR_ONGOING )	{
-			led=0;
+			RW_LED_ON();
 			
-			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_NAK;
 			EEPROM_Write(EP3_RX_BUF, ((uint8_t*)&curAddr)[2], ((uint8_t*)&curAddr)[3], BULK_MAX_PACKET_SIZE);
 			
 			curAddr += BULK_MAX_PACKET_SIZE;
@@ -228,7 +166,7 @@ void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 			BOT_EP_Rx_Valid();
 			
 			if (curAddr >= endAddr) {
-				led=1;
+				RW_LED_OFF();
 				curAddr = 0;
 				endAddr = 0;
 				TransferState = TXFR_IDLE;
@@ -245,18 +183,15 @@ void SCSI_Write10_Cmd(uint8_t lun , uint32_t LBA , uint32_t BlockNbr) {
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_Inquiry_Cmd(uint8_t lun)
-{
+void SCSI_Inquiry_Cmd(uint8_t lun) {
   uint8_t* Inquiry_Data;
   uint16_t Inquiry_Data_Length;
 
-  if (CBW.CB[1] & 0x01)/*Evpd is set*/
-  {
+  if (CBW.CB[1] & 0x01) {/*Evpd is set*/
+  
     Inquiry_Data = Page00_Inquiry_Data;
     Inquiry_Data_Length = 5;
-  }
-  else
-  {
+  } else {
     if ( lun == 0)
     {
       Inquiry_Data = Standard_Inquiry_Data;
@@ -279,10 +214,9 @@ void SCSI_Inquiry_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_ReadFormatCapacity_Cmd(uint8_t lun)
-{
+void SCSI_ReadFormatCapacity_Cmd(uint8_t lun) {
   if (MAL_GetStatus(lun) != 0 ) {
-    Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+    Set_Scsi_Sense_Data(lun, NOT_READY, MEDIUM_NOT_PRESENT);
     Transfer_Failed_ReadWrite();
     return;
   }
@@ -313,10 +247,9 @@ void SCSI_ReadFormatCapacity_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_ReadCapacity10_Cmd(uint8_t lun)
-{	
+void SCSI_ReadCapacity10_Cmd(uint8_t lun) {	
 	if (MAL_GetStatus(lun)) {
-		Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+		Set_Scsi_Sense_Data(lun, NOT_READY, MEDIUM_NOT_PRESENT);
 		Transfer_Failed_ReadWrite();
 		return;
 	}
@@ -342,8 +275,7 @@ void SCSI_ReadCapacity10_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_ModeSense6_Cmd (uint8_t lun)
-{
+void SCSI_ModeSense6_Cmd (uint8_t lun) {
   Transfer_Data_Request(Mode_Sense6_data, MODE_SENSE6_DATA_LEN);
 }
 
@@ -354,45 +286,31 @@ void SCSI_ModeSense6_Cmd (uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_ModeSense10_Cmd (uint8_t lun)
-{
+void SCSI_ModeSense10_Cmd (uint8_t lun) {
   Transfer_Data_Request(Mode_Sense10_data, MODE_SENSE10_DATA_LEN);
 }
 
-/*******************************************************************************
-* Function Name  : SCSI_RequestSense_Cmd
-* Description    : SCSI RequestSense Command routine.
-* Input          : None.
-* Output         : None.
-* Return         : None.
-*******************************************************************************/
-void SCSI_RequestSense_Cmd (uint8_t lun)
-{
-  uint8_t Request_Sense_data_Length;
 
-  if (CBW.CB[4] <= REQUEST_SENSE_DATA_LEN)
-  {
-    Request_Sense_data_Length = CBW.CB[4];
+// Request Sense Command Routine and Set Sense Data
+void SCSI_RequestSense_Cmd (uint8_t lun) {
+  uint8_t i;
+
+	for (i=0; i<REQUEST_SENSE_DATA_LEN; i++)
+		BOT_Tx_Buf[i] = Scsi_Sense_Data[i];
+	
+	BOT_Tx_Buf[2] = Sense_Key[lun];
+	BOT_Tx_Buf[12] = Sense_Asc[lun];
+	
+  if (CBW.CB[4] <= REQUEST_SENSE_DATA_LEN) {
+		Reply_Request(CBW.CB[4]);		
+  } else {
+    Reply_Request(REQUEST_SENSE_DATA_LEN);	
   }
-  else
-  {
-    Request_Sense_data_Length = REQUEST_SENSE_DATA_LEN;
-  }
-  Transfer_Data_Request(Scsi_Sense_Data, Request_Sense_data_Length);
 }
 
-/*******************************************************************************
-* Function Name  : Set_Scsi_Sense_Data
-* Description    : Set Scsi Sense Data routine.
-* Input          : uint8_t Sens_Key
-                   uint8_t Asc.
-* Output         : None.
-* Return         : None.
-*******************************************************************************/
-void Set_Scsi_Sense_Data(uint8_t lun, uint8_t Sens_Key, uint8_t Asc)
-{
-  Scsi_Sense_Data[2] = Sens_Key;
-  Scsi_Sense_Data[12] = Asc;
+void Set_Scsi_Sense_Data(uint8_t lun, uint8_t Sens_Key, uint8_t Asc) {
+  Sense_Key[lun] = Sens_Key;
+  Sense_Asc[lun] = Asc;
 }
 
 /*******************************************************************************
@@ -425,16 +343,12 @@ void SCSI_Allow_Medium_Removal_Cmd(uint8_t lun) {
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_Verify10_Cmd(uint8_t lun)
-{
-  if ((CBW.dDataLength == 0) && !(CBW.CB[1] & BLKVFY))/* BLKVFY not set*/
-  {
+void SCSI_Verify10_Cmd(uint8_t lun) {
+  if ((CBW.dDataLength == 0) && !(CBW.CB[1] & BLKVFY)) { /* BLKVFY not set*/
     Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
-  }
-  else
-  {
+  } else {
     Bot_Abort(BOTH_DIR);
-    Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+    Set_Scsi_Sense_Data(lun, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
     Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
   }
 }
@@ -446,17 +360,13 @@ void SCSI_Verify10_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_TestUnitReady_Cmd(uint8_t lun)
-{
-  if (MAL_GetStatus(lun))
-  {
-    Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+void SCSI_TestUnitReady_Cmd(uint8_t lun) {
+  if (MAL_GetStatus(lun)) {
+    Set_Scsi_Sense_Data(lun, NOT_READY, MEDIUM_NOT_PRESENT);
     Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
     // Bot_Abort(DIR_IN);
     return;
-  }
-  else
-  {
+  } else {
     Set_CSW (CSW_CMD_PASSED, SEND_CSW_ENABLE);
   }
 }
@@ -467,11 +377,9 @@ void SCSI_TestUnitReady_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_Format_Cmd(uint8_t lun)
-{
-  if (MAL_GetStatus(lun))
-  {
-    Set_Scsi_Sense_Data(CBW.bLUN, NOT_READY, MEDIUM_NOT_PRESENT);
+void SCSI_Format_Cmd(uint8_t lun) {
+  if (MAL_GetStatus(lun)) {
+    Set_Scsi_Sense_Data(lun, NOT_READY, MEDIUM_NOT_PRESENT);
     Set_CSW (CSW_CMD_FAILED, SEND_CSW_ENABLE);
     Bot_Abort(DIR_IN);
     return;
@@ -484,24 +392,18 @@ void SCSI_Format_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-void SCSI_Invalid_Cmd(uint8_t lun)
-{
-  if (CBW.dDataLength == 0)
-  {
+void SCSI_Invalid_Cmd(uint8_t lun) {
+  if (CBW.dDataLength == 0) {
     Bot_Abort(DIR_IN);
-  }
-  else
-  {
-    if ((CBW.bmFlags & 0x80) != 0)
-    {
+  } else {
+    if ((CBW.bmFlags & 0x80) != 0) {
       Bot_Abort(DIR_IN);
-    }
-    else
-    {
+    } else {
       Bot_Abort(BOTH_DIR);
     }
   }
-  Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_COMMAND);
+	
+  Set_Scsi_Sense_Data(lun, ILLEGAL_REQUEST, INVALID_COMMAND);
   Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
 }
 
@@ -512,12 +414,9 @@ void SCSI_Invalid_Cmd(uint8_t lun)
 * Output         : None.
 * Return         : Read\Write status (bool).
 *******************************************************************************/
-bool SCSI_Address_Management(uint8_t lun , uint8_t Cmd , uint32_t LBA , uint32_t BlockNbr)
-{
-  if ((LBA + BlockNbr) > Mass_Block_Count[lun] )
-  {
-    if (Cmd == SCSI_WRITE10)
-    {
+bool SCSI_Address_Management(uint8_t lun , uint8_t Cmd , uint32_t LBA , uint32_t BlockNbr) {
+  if ((LBA + BlockNbr) > Mass_Block_Count[lun]) {
+    if (Cmd == SCSI_WRITE10) {
       Bot_Abort(BOTH_DIR);
     }
     Bot_Abort(DIR_IN);
@@ -526,17 +425,13 @@ bool SCSI_Address_Management(uint8_t lun , uint8_t Cmd , uint32_t LBA , uint32_t
     return (FALSE);
   }
 
-  if (CBW.dDataLength != BlockNbr * Mass_Block_Size[lun])
-  {
-    if (Cmd == SCSI_WRITE10)
-    {
+  if (CBW.dDataLength != BlockNbr * Mass_Block_Size[lun]) {
+    if (Cmd == SCSI_WRITE10) {
       Bot_Abort(BOTH_DIR);
-    }
-    else
-    {
+    } else {
       Bot_Abort(DIR_IN);
     }
-    Set_Scsi_Sense_Data(CBW.bLUN, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+    Set_Scsi_Sense_Data(lun, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
     Set_CSW (CSW_CMD_FAILED, SEND_CSW_DISABLE);
     return (FALSE);
   }

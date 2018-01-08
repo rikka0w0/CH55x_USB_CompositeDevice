@@ -103,7 +103,7 @@ code const uint8_t Page00_Inquiry_Data[];
 code const uint8_t Standard_Inquiry_Data[];
 code const uint8_t Mode_Sense6_data[];
 code const uint8_t Mode_Sense10_data[];
-xdata uint8_t Scsi_Sense_Data[];
+code const uint8_t Scsi_Sense_Data[];
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */

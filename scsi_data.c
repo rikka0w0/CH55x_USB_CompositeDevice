@@ -81,7 +81,8 @@ code const uint8_t Mode_Sense10_data[] =
     0x00,
     0x00
   };
-xdata uint8_t Scsi_Sense_Data[] =
+
+code const uint8_t Scsi_Sense_Data[] =
   {
     0x70, /*RespCode*/
     0x00, /*SegmentNumber*/
