@@ -362,31 +362,6 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
-              <FileName>CH554.H</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\CH554.H</FilePath>
-            </File>
-            <File>
-              <FileName>CH554.INC</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\CH554.INC</FilePath>
-            </File>
-            <File>
-              <FileName>Debug.C</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Debug.C</FilePath>
-            </File>
-            <File>
-              <FileName>Debug.H</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Debug.H</FilePath>
-            </File>
-            <File>
-              <FileName>CompositeKM.C</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\CompositeKM.C</FilePath>
-            </File>
-            <File>
               <FileName>usb_hid_desc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\usb_hid_desc.c</FilePath>
@@ -445,6 +420,21 @@
               <FileName>eeprom.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\eeprom.c</FilePath>
+            </File>
+            <File>
+              <FileName>ch554_conf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ch554_conf.c</FilePath>
+            </File>
+            <File>
+              <FileName>Delay.C</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Delay.C</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\main.c</FilePath>
             </File>
           </Files>
         </Group>
