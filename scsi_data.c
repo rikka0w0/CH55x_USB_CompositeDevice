@@ -28,8 +28,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usb_scsi.h"
-#include "types.h"
-
 
 code const uint8_t Page00_Inquiry_Data[] =
   {
@@ -38,25 +36,6 @@ code const uint8_t Page00_Inquiry_Data[] =
     0x00,
     0x00,
     0x00 /* Supported Pages 00*/
-  };
-code const uint8_t Standard_Inquiry_Data[] =
-  {
-    0x00,          /* Direct Access Device */
-    0x80,          /* RMB = 1: Removable Medium */
-    0x04,          /* Version: No conformance claim to standard */
-    0x02,
-
-    0x1f,          /* Additional Length */
-    0x00,          /* SCCS = 1: Storage Controller Component */
-    0x00,
-    0x00,
-    /* Vendor Identification */
-    'S', 'T', 'M', ' ', ' ', ' ', ' ', ' ',				/* Manufacturer: 8 bytes */
-    /* Product Identification */
-    'S', 'D', ' ', 'F', 'l', 'a', 's', 'h',				/* Product : 16 Bytes */
-		' ', 'D', 'i', 's', 'k', ' ', ' ', ' ',
-    /* Product Revision Level */
-    '1', '.', '0', ' '														/* Version : 4 Bytes */
   };
 
 /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/

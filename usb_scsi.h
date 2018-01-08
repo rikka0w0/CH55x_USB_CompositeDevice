@@ -97,10 +97,10 @@
 #define MODE_SENSE6_DATA_LEN                        0x04
 #define REQUEST_SENSE_DATA_LEN                      0x12
 #define STANDARD_INQUIRY_DATA_LEN                   0x24
+#define PAGE00_INQUIRY_DATA_LEN											0x05
 #define BLKVFY                                      0x04
 
 code const uint8_t Page00_Inquiry_Data[];
-code const uint8_t Standard_Inquiry_Data[];
 code const uint8_t Mode_Sense6_data[];
 code const uint8_t Mode_Sense10_data[];
 code const uint8_t Scsi_Sense_Data[];

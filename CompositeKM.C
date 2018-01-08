@@ -166,7 +166,8 @@ void ConfigSysClock() {
 //CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x00;  // 187.5MHz		
 	SAFE_MOD = 0x00;	
 }
-
+extern void LUN_Init(void);
+extern void I2C_Init(void);
 main()
 {
     ConfigSysClock();                                                           //CH559时钟选择配置
@@ -175,8 +176,11 @@ main()
 	
     printf("start ...\n");
 	
-    USBDeviceInit();                                                      //USB设备模式初始化
-    EA = 1;                                                               //允许单片机中断
+	USBDeviceInit();                                                      //USB设备模式初始化
+	I2C_Init();
+	LUN_Init();
+  
+	EA = 1;                                                               //允许单片机中断
     FLAG = 0;
     Ready = 0;
 	

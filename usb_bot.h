@@ -34,6 +34,7 @@
 #include "types.h"
 
 // BOT_USB Config
+#include "usb_endp.h"
 #define BOT_Rx_Buf EP3_RX_BUF
 #define BOT_Tx_Buf EP3_TX_BUF
 #define BULK_MAX_PACKET_SIZE EP3_SIZE

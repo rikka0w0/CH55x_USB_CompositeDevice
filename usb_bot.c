@@ -231,10 +231,10 @@ void CBW_Decode(void)
           SCSI_Write10_Cmd(CBW.bLUN, SCSI_LBA , SCSI_BlkLen);
           break;
         case SCSI_VERIFY10:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_Verify10_Cmd(CBW.bLUN);
+          SCSI_Verify10_Cmd(CBW.bLUN);
           break;
         case SCSI_FORMAT_UNIT:
-          SCSI_Invalid_Cmd(CBW.bLUN);//SCSI_Format_Cmd(CBW.bLUN);
+          SCSI_Format_Cmd(CBW.bLUN);
           break;
           /*Unsupported command*/
         case SCSI_MODE_SELECT10:
