@@ -5,11 +5,11 @@
 #define MAX_PACKET_SIZE 64
 
 // The buffer (Tx and Rx) must have an even address, size: 66 (0x42)
-xdata __at(0x000a) uint8_t Ep1Buffer[64 > (MAX_PACKET_SIZE + 2) ? 64 : (MAX_PACKET_SIZE + 2)];
+xdatabuf(EP1_ADDR, Ep1Buffer, 64 > (MAX_PACKET_SIZE + 2) ? 64 : (MAX_PACKET_SIZE + 2));
 // The buffer (Tx and Rx) must have an even address, size: 132 (0x84)
-xdata __at(0x0050) uint8_t Ep2Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)];
+xdatabuf(EP2_ADDR, Ep2Buffer, 128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4));
 // The buffer (Tx and Rx) must have an even address, size: 132 (0x84)
-xdata __at(0x00D4) uint8_t Ep3Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)];
+xdatabuf(EP3_ADDR, Ep3Buffer, 128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4));
 
 uint8_t USB_EP_HALT_SET(uint8_t ep) {
 	switch (ep) {

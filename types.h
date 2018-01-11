@@ -1,51 +1,63 @@
-#ifndef __51types
-#define __51types
+#ifndef __PLATFORM
+#define __PLATFORM
 
 #if defined (SDCC) || defined (__SDCC)
+	#ifndef __SDCC
+		#define __SDCC
+	#endif
+
 	// Use GCC defined standard types
 	#include <stdint.h>
 	// SDCC is little-endian
 	#define __LITTLE_ENDIAN
+
 	// Define Keil C51 specified derivatives
 	#define xdata __xdata
-	#define xat(addr) __at (addr)
 	#define code __code
+	#define interrupt __interrupt
 
+	#define xdatabuf(addr, name, size) __xdata __at(addr) uint8_t name[size]
 #else
+	#ifndef __KEIL_C51
+		#define __KEIL_C51
+	#endif
+
+	// Define standard types
+	#ifndef bool
+	typedef bit bool;
+	#endif
+
+	#ifndef uint8_t
+	typedef unsigned char uint8_t;
+	#endif
+
+	#ifndef int8_t
+	typedef signed char int8_t;
+	#endif
+
+	#ifndef uint16_t
+	typedef unsigned short uint16_t;
+	#endif
+
+	#ifndef int16_t
+	typedef signed short int16_t;
+	#endif
+
+	#ifndef uint32_t
+	typedef unsigned long uint32_t;
+	#endif
+
+	#ifndef int32_t
+	typedef signed long int32_t;
+	#endif
+
 	// Keil C51 is big-endian
 	#define __BIG_ENDIAN
 
-#define xat(addr) _at_ addr
+	// SDCC style SBIT
+	#define SBIT(var, port, pin) sbit var = port^pin
 
-// Define standard types
-#ifndef bool
-typedef bit bool;
-#endif
-
-#ifndef uint8_t
-typedef unsigned char uint8_t;
-#endif
-
-#ifndef int8_t
-typedef signed char int8_t;
-#endif
-
-#ifndef uint16_t
-typedef unsigned short uint16_t;
-#endif
-
-#ifndef int16_t
-typedef signed short int16_t;
-#endif
-
-#ifndef uint32_t
-typedef unsigned long uint32_t;
-#endif
-
-#ifndef int32_t
-typedef signed long int32_t;
-#endif
-
+	#define xdatabuf(addr, name, size) xdata uint8_t name[size] _at_ addr
 #endif
 
 #if defined __BIG_ENDIAN

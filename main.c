@@ -23,6 +23,6 @@ void main(void) {
 }
 
 extern void DeviceInterrupt(void);
-void USB(void) __interrupt (INT_NO_USB) {
+void USB(void) interrupt INT_NO_USB {
 	DeviceInterrupt();
 }

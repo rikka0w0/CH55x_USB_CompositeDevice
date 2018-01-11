@@ -14,7 +14,7 @@
 #define USB_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
 
 // The buffer (Tx and Rx) must have an even address, size: 10 (0x0A)
-xdata __at(0x0000) uint8_t Ep0Buffer[8 > (USB_ENDP0_SIZE + 2) ? 8 : (USB_ENDP0_SIZE + 2)];
+xdatabuf(EP0_ADDR, Ep0Buffer, 8 > (USB_ENDP0_SIZE + 2) ? 8 : (USB_ENDP0_SIZE + 2));
 
 #define UsbSetupBuf ((PUSB_SETUP_REQ)Ep0Buffer)
 
