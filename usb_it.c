@@ -35,14 +35,14 @@ code const void (*pEndPoint_IN_CallBack[])(void) =
 	
 code const void (*pEndPoint_SETUP_CallBack[])(void) =
  {
-		EP0_SETUP_Callback,
-    EP1_SETUP_Callback,
-    EP2_SETUP_Callback,
-    EP3_SETUP_Callback,
-    EP4_SETUP_Callback,
+		 EP0_SETUP_Callback,
+		 EP1_SETUP_Callback,
+		 EP2_SETUP_Callback,
+		 EP3_SETUP_Callback,
+		 EP4_SETUP_Callback,
 };
-	
-void DeviceInterrupt(void) interrupt INT_NO_USB using 1 {
+
+void DeviceInterrupt(void) {
 	if(UIF_TRANSFER) {
 		// Dispatch to service functions
 		switch (USB_INT_ST & MASK_UIS_TOKEN) {

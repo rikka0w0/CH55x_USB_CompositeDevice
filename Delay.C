@@ -21,7 +21,7 @@
 * Output         : None
 * Return         : None
 *******************************************************************************/ 
-void	mDelayuS( UINT16 n )  // 以uS为单位延时
+void	mDelayuS(uint16_t n )  // 以uS为单位延时
 {
 #ifdef	CLOCK_CFG
 #if		CLOCK_CFG <= 6000000
@@ -79,7 +79,7 @@ void	mDelayuS( UINT16 n )  // 以uS为单位延时
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void	mDelaymS( UINT16 n )                                                  // 以mS为单位延时
+void	mDelaymS(uint16_t n )                                                  // 以mS为单位延时
 {
 	while ( n ) {
 #ifdef	DELAY_MS_HW

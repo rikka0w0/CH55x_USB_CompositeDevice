@@ -2,12 +2,14 @@
 #include "usb_endp.h"
 #include "CH554.h"
 
+#define MAX_PACKET_SIZE 64
+
 // The buffer (Tx and Rx) must have an even address, size: 66 (0x42)
-xdata uint8_t Ep1Buffer[64 > (MAX_PACKET_SIZE + 2) ? 64 : (MAX_PACKET_SIZE + 2)] _at_ 0x000a;
+xdata __at(0x000a) uint8_t Ep1Buffer[64 > (MAX_PACKET_SIZE + 2) ? 64 : (MAX_PACKET_SIZE + 2)];
 // The buffer (Tx and Rx) must have an even address, size: 132 (0x84)
-xdata uint8_t Ep2Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)] _at_ 0x0050;
+xdata __at(0x0050) uint8_t Ep2Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)];
 // The buffer (Tx and Rx) must have an even address, size: 132 (0x84)
-xdata uint8_t Ep3Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)] _at_ 0x00D4;
+xdata __at(0x00D4) uint8_t Ep3Buffer[128 > (2 * MAX_PACKET_SIZE + 4) ? 128 : (2 * MAX_PACKET_SIZE + 4)];
 
 uint8_t USB_EP_HALT_SET(uint8_t ep) {
 	switch (ep) {
@@ -54,7 +56,7 @@ uint8_t USB_EP_HALT_CLEAR(uint8_t ep) {
 	}
 }
 
-extern uint8_t FLAG;
+extern xdata uint8_t FLAG;
 
 void USB_EP1_IN(void) {
 	UEP1_T_LEN = 0;                                                     //预使用发送长度一定要清空

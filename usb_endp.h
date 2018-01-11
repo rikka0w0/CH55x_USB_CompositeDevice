@@ -6,17 +6,17 @@ uint8_t USB_EP_HALT_SET(uint8_t ep);
 uint8_t USB_EP_HALT_CLEAR(uint8_t ep);
 
 // EP0
-xdata uint8_t Ep0Buffer[];
+extern xdata __at(0x0000) uint8_t Ep0Buffer[];
 void USB_EP0_SETUP(void);
 void USB_EP0_IN(void);
 void USB_EP0_OUT(void);
 
 // EP1
-xdata uint8_t Ep1Buffer[];
+extern xdata __at(0x000a) uint8_t Ep1Buffer[];
 void USB_EP1_IN(void);
 
 // EP2
-xdata uint8_t Ep2Buffer[];
+extern xdata __at(0x0050) uint8_t Ep2Buffer[];
 #define EP2_SIZE 64
 #define EP2_RX_BUF (Ep2Buffer)
 #define EP2_TX_BUF (Ep2Buffer + EP2_SIZE)
@@ -24,7 +24,7 @@ void USB_EP2_IN(void);
 void USB_EP2_OUT(void);
 
 // EP3
-xdata uint8_t Ep3Buffer[];
+extern xdata __at(0x00D4) uint8_t Ep3Buffer[];
 #define EP3_SIZE 64
 #define EP3_RX_BUF (Ep3Buffer)
 #define EP3_TX_BUF (Ep3Buffer + EP3_SIZE)

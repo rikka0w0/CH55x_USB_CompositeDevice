@@ -100,10 +100,10 @@
 #define PAGE00_INQUIRY_DATA_LEN											0x05
 #define BLKVFY                                      0x04
 
-code const uint8_t Page00_Inquiry_Data[];
-code const uint8_t Mode_Sense6_data[];
-code const uint8_t Mode_Sense10_data[];
-code const uint8_t Scsi_Sense_Data[];
+extern code const uint8_t Page00_Inquiry_Data[];
+extern code const uint8_t Mode_Sense6_data[];
+extern code const uint8_t Mode_Sense10_data[];
+extern code const uint8_t Scsi_Sense_Data[];
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
@@ -121,7 +121,7 @@ void SCSI_Verify10_Cmd(uint8_t lun);
 
 void SCSI_Invalid_Cmd(uint8_t lun);
 void SCSI_Valid_Cmd(uint8_t lun);
-bool SCSI_Address_Management(uint8_t lun , uint8_t Cmd , uint32_t LBA , uint32_t BlockNbr);
+uint8_t SCSI_Address_Management(uint8_t lun , uint8_t Cmd , uint32_t LBA , uint32_t BlockNbr);
 
 void Set_Scsi_Sense_Data(uint8_t lun , uint8_t Sens_Key, uint8_t Asc);
 void SCSI_TestUnitReady_Cmd (uint8_t lun);

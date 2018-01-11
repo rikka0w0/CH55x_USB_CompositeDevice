@@ -8,8 +8,8 @@
 #define MAL_OK   0
 #define MAL_FAIL 1
 
-xdata uint32_t Mass_Block_Size[];
-xdata uint32_t Mass_Block_Count[];
+extern xdata uint32_t Mass_Block_Size[];
+extern xdata uint32_t Mass_Block_Count[];
 
 void LUN_Init(void);
 uint8_t LUN_GetStatus(uint8_t lun);

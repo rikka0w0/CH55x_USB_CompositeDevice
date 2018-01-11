@@ -1,6 +1,9 @@
 #ifndef	__DELAY_H__
 #define __DELAY_H__
 
-void	mDelayuS( UINT16 n );
-void	mDelaymS( UINT16 n );
+#include <stdint.h>
+
+void	mDelayuS(uint16_t n );
+void	mDelaymS(uint16_t n );
+
 #endif

@@ -51,18 +51,18 @@ uint8_t* LUN_GetInquiryData (uint8_t lun) {
 // Read BULK_MAX_PACKET_SIZE bytes of data from device to BOT_Tx_Buf
 void LUN_Read (uint8_t lun, uint32_t curAddr) {
 	if (lun == 0) {
-		EEPROM_Read(BOT_Tx_Buf, ((uint8_t*)&curAddr)[2], ((uint8_t*)&curAddr)[3], BULK_MAX_PACKET_SIZE);
+		EEPROM_Read(BOT_Tx_Buf, U32B1(curAddr), U32B0(curAddr), BULK_MAX_PACKET_SIZE);
 	}
 }
 
 // Write BULK_MAX_PACKET_SIZE bytes of data from BOT_Rx_Buf to device
 void LUN_Write (uint8_t lun, uint32_t curAddr) {
 	if (lun == 0) {
-		EEPROM_Write(BOT_Rx_Buf, ((uint8_t*)&curAddr)[2], ((uint8_t*)&curAddr)[3], BULK_MAX_PACKET_SIZE);
+		EEPROM_Write(BOT_Rx_Buf, U32B1(curAddr), U32B0(curAddr), BULK_MAX_PACKET_SIZE);
 	}
 }
 
-sbit ledEject = P1^0;
+SBIT(ledEject,	0x90, 0);
 void LUN_Eject (uint8_t lun) {
 	if (lun == 0) {
 		EEPROM_Status = MAL_FAIL;

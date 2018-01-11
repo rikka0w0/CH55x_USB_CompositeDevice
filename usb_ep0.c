@@ -2,6 +2,7 @@
 #include "usb_desc.h"
 #include "usb_endp.h"
 #include "CH554.h"
+#include "ch554_usb.h"
 #include <string.h>	// For memcpy()
 
 #include "usb_bot.h"
@@ -13,7 +14,7 @@
 #define USB_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
 
 // The buffer (Tx and Rx) must have an even address, size: 10 (0x0A)
-xdata uint8_t  Ep0Buffer[8 > (USB_ENDP0_SIZE + 2) ? 8 : (USB_ENDP0_SIZE + 2)] _at_ 0x0000;
+xdata __at(0x0000) uint8_t Ep0Buffer[8 > (USB_ENDP0_SIZE + 2) ? 8 : (USB_ENDP0_SIZE + 2)];
 
 #define UsbSetupBuf ((PUSB_SETUP_REQ)Ep0Buffer)
 
@@ -37,17 +38,17 @@ void USB_EP0_SETUP(void) {
 			case USB_GET_DESCRIPTOR:
 				switch (UsbSetupBuf->wValueH) {
 				case 1:												// Device Descriptor
-					pDescr = DevDesc;
+					pDescr = (uint8_t*)DevDesc;
 					len = USB_DESCSIZE_DEVICE;
 					break;
 				case 2:												// Configure Descriptor
-					pDescr = CfgDesc;
+					pDescr = (uint8_t*)CfgDesc;
 					len = (USB_DESCSIZE_CONFIG_H << 8) | USB_DESCSIZE_CONFIG_L;
 					break;
 				case 3:												// String Descriptor
 					len = UsbSetupBuf->wValueL;	// Index
 					if (len < USB_STRINGDESC_COUNT) {
-						pDescr = StringDescs[len];
+						pDescr = (uint8_t*)(StringDescs[len]);
 						len = pDescr[0];
 					} else {
 						len = 0xFF;								// Not supported
@@ -59,7 +60,7 @@ void USB_EP0_SETUP(void) {
 						if (len == USB_INTERFACES - 1)
 							Ready = 1;
 						
-						pDescr = USB_HID_REPDESCS[len];
+						pDescr = (uint8_t*)(USB_HID_REPDESCS[len]);
 						len = USB_HID_REPDESCS_SIZE[len];			
 					} else {
 						len = 0xff;		// The host is trying to config invalid interfaces
@@ -92,15 +93,15 @@ void USB_EP0_SETUP(void) {
 				break;
 			case USB_CLEAR_FEATURE:                                            //Clear Feature
 				if ((UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_ENDP) {	// Endpoint
-					len = USB_EP_HALT_CLEAR(((UINT16)UsbSetupBuf->wIndexH << 8) | UsbSetupBuf->wIndexL);
+					len = USB_EP_HALT_CLEAR(UsbSetupBuf->wIndexL);
 				} else {
 					len = 0xFF;			// Unsupported
 				}
 				break;
 			case USB_SET_FEATURE:                                              /* Set Feature */
 				if ((UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_ENDP) { // Endpoint
-					if ((((UINT16)UsbSetupBuf->wValueH << 8) | UsbSetupBuf->wValueL) == USB_FEATURE_ENDPOINT_HALT) {
-						len = USB_EP_HALT_SET(((UINT16)UsbSetupBuf->wIndexH << 8) | UsbSetupBuf->wIndexL);
+					if ((((uint16_t)UsbSetupBuf->wValueH << 8) | UsbSetupBuf->wValueL) == USB_FEATURE_ENDPOINT_HALT) {
+						len = USB_EP_HALT_SET(UsbSetupBuf->wIndexL);
 					} else {
 						len = 0xFF;		// Unsupported
 					}	// if ((((UINT16)UsbSetupBuf->wValueH << 8) | UsbSetupBuf->wValueL) == 0x00)
@@ -184,18 +185,18 @@ void USB_EP0_IN(void) {
 	{
 	case USB_GET_DESCRIPTOR:
 		len = SetupLen >= 8 ? 8 : SetupLen;		// Fix length
-		memcpy(Ep0Buffer, pDescr, len);				// Copy data to Ep0Buffer, ready to Tx
+		memcpy(Ep0Buffer, pDescr, len);			// Copy data to Ep0Buffer, ready to Tx
 		SetupLen -= len;
 		pDescr += len;
 		UEP0_T_LEN = len;
-		UEP0_CTRL ^= bUEP_T_TOG;							// Switch between DATA0 and DATA1	
+		UEP0_CTRL ^= bUEP_T_TOG;				// Switch between DATA0 and DATA1
 		break;
 	case USB_SET_ADDRESS:
 		USB_DEV_AD = bUDA_GP_BIT | SetupLen;
 		UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 		break;
 	default:
-		UEP0_T_LEN = 0;												// End of transaction
+		UEP0_T_LEN = 0;							// End of transaction
 		UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 		break;
 	}

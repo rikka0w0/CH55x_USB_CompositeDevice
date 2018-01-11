@@ -50,15 +50,22 @@
 /* Exported types ------------------------------------------------------------*/
 /* Bulk-only Command Block Wrapper */
 
-typedef struct _Bulk_Only_CBW
-{
-  uint32_t dSignature;
-  uint32_t dTag;
-  uint32_t dDataLength;
-  uint8_t  bmFlags;
-  uint8_t  bLUN;
-  uint8_t  bCBLength;
-  uint8_t  CB[16];
+typedef struct _Bulk_Only_CBW {
+	uint8_t dSignature0;
+	uint8_t dSignature1;
+	uint8_t dSignature2;
+	uint8_t dSignature3;
+
+	uint8_t dTag0;
+	uint8_t dTag1;
+	uint8_t dTag2;
+	uint8_t dTag3;
+
+	uint32_t dDataLength;
+	uint8_t  bmFlags;
+	uint8_t  bLUN;
+	uint8_t  bCBLength;
+	uint8_t  CB[16];
 }
 Bulk_Only_CBW;
 
@@ -67,23 +74,26 @@ Bulk_Only_CBW;
 /*****************************************************************************/
 /*********************** Bulk-Only Transfer State machine ********************/
 /*****************************************************************************/
-#define BOT_IDLE                      0       /* Idle state */
-#define BOT_DATA_OUT                  1       /* Data Out state */
-#define BOT_DATA_IN                   2       /* Data In state */
-#define BOT_DATA_IN_LAST              3       /* Last Data In Last */
-#define BOT_CSW_Send                  4       /* Command Status Wrapper */
-#define BOT_ERROR                     5       /* error state */
-#define BOT_DATA_IN_LAST_FAIL         6
+#define BOT_IDLE                      0		// Idle state
+#define BOT_DATA_OUT                  1		// Data Out state
+#define BOT_DATA_IN                   2		// Data In state
+#define BOT_DATA_IN_LAST              3		// Last Data In Last
+#define BOT_CSW_Send                  4		// Command Status Wrapper
+#define BOT_ERROR                     5		// Error state
+#define BOT_DATA_IN_LAST_FAIL         6		// Send a Check_Status to host
 
-//#define BOT_CBW_SIGNATURE             0x43425355
-//#define BOT_CSW_SIGNATURE             0x53425355
-#define BOT_CBW_SIGNATURE							0x55534243		// Big-Endian
-#define BOT_CSW_SIGNATURE0						0x55;
-#define BOT_CSW_SIGNATURE1						0x53;
-#define BOT_CSW_SIGNATURE2						0x42;
-#define BOT_CSW_SIGNATURE3						0x53;
+// BOT CBW & CSW Signatures
 #define BOT_CBW_PACKET_LENGTH         31
+#define BOT_CBW_SIGNATURE0						0x55
+#define BOT_CBW_SIGNATURE1						0x53
+#define BOT_CBW_SIGNATURE2						0x42
+#define BOT_CBW_SIGNATURE3						0x43
+
 #define CSW_DATA_LENGTH               13
+#define BOT_CSW_SIGNATURE0						0x55
+#define BOT_CSW_SIGNATURE1						0x53
+#define BOT_CSW_SIGNATURE2						0x42
+#define BOT_CSW_SIGNATURE3						0x53
 
 /* CSW Status Definitions */
 #define CSW_CMD_PASSED                0x00

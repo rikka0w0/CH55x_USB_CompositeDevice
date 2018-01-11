@@ -3,8 +3,10 @@
 
 xdata uint8_t I2C_Buf;
 
-sbit sda_pin = P1^5;
-sbit scl_pin = P1^4;
+SBIT(sda_pin,	0x90, 5);
+SBIT(scl_pin,	0x90, 4);
+//sbit sda_pin = P1^5;
+//sbit scl_pin = P1^4;
 
 #define I2C_SDA()	(sda_pin==1)
 #define I2C_SDA_H()	{sda_pin = 1;}
@@ -14,7 +16,7 @@ sbit scl_pin = P1^4;
 
 void I2C_DELAY(void) {
 	uint8_t i;
-	for (i=0; i<7; i++);
+	for (i=0; i<7; i++);	// Frequency control
 }
 
 void I2C_Init(void) {
