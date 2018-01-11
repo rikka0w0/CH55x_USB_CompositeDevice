@@ -1,5 +1,3 @@
-#include "ch554.h"
-
 #include "eeprom.h"
 #include "usb_mal.h"
 #include "usb_bot.h"

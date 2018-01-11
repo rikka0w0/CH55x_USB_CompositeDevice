@@ -22,7 +22,6 @@
 								<option id="sdcc.c.compiler.option.include.paths.1504516582" name="Include paths (-I)" superClass="sdcc.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;D:\Software\Develop\sdcc\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;D:\Software\Develop\sdcc\include\mcs51&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\Administrator\Desktop\ch554\SDCC\include&quot;"/>
 								</option>
 								<option id="sdcc.c.compiler.option.preprocessor.def.symbols.65586798" name="Defined symbols (-D)" superClass="sdcc.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="CLOCK_FREQ_24=1"/>

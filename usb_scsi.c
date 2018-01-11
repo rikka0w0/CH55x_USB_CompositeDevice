@@ -34,7 +34,6 @@
 #include "eeprom.h"
 
 #include "usb_endp.h"
-#include "ch554.h"
 #include "types.h"
 
 SBIT(led,	0x90, 1);

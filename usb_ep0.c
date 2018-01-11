@@ -1,8 +1,6 @@
 #include "types.h"
 #include "usb_desc.h"
 #include "usb_endp.h"
-#include "CH554.h"
-#include "ch554_usb.h"
 #include <string.h>	// For memcpy()
 
 #include "usb_bot.h"
