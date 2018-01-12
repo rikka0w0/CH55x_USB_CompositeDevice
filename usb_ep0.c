@@ -16,7 +16,7 @@ xdatabuf(EP0_ADDR, Ep0Buffer, 8 > (USB_ENDP0_SIZE + 2) ? 8 : (USB_ENDP0_SIZE + 2
 
 #define UsbSetupBuf ((PUSB_SETUP_REQ)Ep0Buffer)
 
-uint8_t   SetupReq, SetupLen, Ready, UsbConfig;
+uint8_t   SetupReq, SetupLen, UsbConfig;
 uint8_t*  pDescr;
 
 // Process SETUP packet
@@ -55,11 +55,9 @@ void USB_EP0_SETUP(void) {
 				case 0x22:										// Report Descriptor
 					len = UsbSetupBuf->wIndexL;
 					if (len < USB_INTERFACES) {
-						if (len == USB_INTERFACES - 1)
-							Ready = 1;
 						
-						pDescr = (uint8_t*)(USB_HID_REPDESCS[len]);
-						len = USB_HID_REPDESCS_SIZE[len];			
+						pDescr = USB_HID_GetReportDesc(len);
+						len = USB_HID_GetReportDesc_Length(len);
 					} else {
 						len = 0xff;		// The host is trying to config invalid interfaces
 					}

@@ -41,7 +41,7 @@ code const void (*pEndPoint_SETUP_CallBack[])(void) =
 		 EP4_SETUP_Callback,
 };
 
-void DeviceInterrupt(void) {
+void USBInterrupt(void) {
 	if(UIF_TRANSFER) {
 		// Dispatch to service functions
 		switch (USB_INT_ST & MASK_UIS_TOKEN) {

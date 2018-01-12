@@ -307,7 +307,7 @@
             <InterruptVectorAddress>0</InterruptVectorAddress>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define></Define>
+              <Define>CLOCK_FREQ_24</Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
             </VariousControls>
@@ -435,6 +435,11 @@
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_hid_keyboard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb_hid_keyboard.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -1,5 +1,6 @@
 #include "types.h"
 #include "usb_endp.h"
+#include "usb_hid_keyboard.h"
 
 #define MAX_PACKET_SIZE 64
 
@@ -55,22 +56,20 @@ uint8_t USB_EP_HALT_CLEAR(uint8_t ep) {
 	}
 }
 
-extern xdata uint8_t FLAG;
+extern uint8_t keyState, kbdModifier, kbdKey;
 
 void USB_EP1_IN(void) {
-	UEP1_T_LEN = 0;                                                     //预使用发送长度一定要清空
-  //UEP2_CTRL ^= bUEP_T_TOG;                                          //如果不设置自动翻转则需要手动翻转
-	UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
+	UEP1_T_LEN = 0;
+	UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;	// No data to send
 
-	FLAG = 1;
+	if (keyState == KBD_STATE_KEYDOWN)
+		keyState = KBD_STATE_IDLE;
 }
 
 void USB_EP2_IN(void) {
-	UEP2_T_LEN = 0;                                                     //预使用发送长度一定要清空
-  //UEP1_CTRL ^= bUEP_T_TOG;                                          //如果不设置自动翻转则需要手动翻转
-	UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK	
+	UEP2_T_LEN = 0;
+	UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;	// No data to send
 }
-
 
 
 void USB_EP2_OUT(void) {
@@ -78,6 +77,12 @@ void USB_EP2_OUT(void) {
 	if (U_TOG_OK) {	// Discard unsynchronized packets
 		for (i = 0; i < USB_RX_LEN; i++)
 			EP2_TX_BUF[i] = EP2_RX_BUF[i] ^ 0xFF;		// Invert bits and Tx to host (for validation)
+		
+		if (EP2_RX_BUF[0]==0xEE) {
+			keyState = KBD_STATE_KEYDOWN;
+			kbdModifier = EP2_RX_BUF[1];
+			kbdKey = EP2_RX_BUF[2];
+		}
 		
 		UEP2_T_LEN = USB_RX_LEN;
 		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;	// Enable Tx

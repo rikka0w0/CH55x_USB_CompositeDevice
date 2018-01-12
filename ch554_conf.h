@@ -40,4 +40,7 @@
 
 void CH554_Init(void);
 
+// Interrupt Handlers
+void USBInterrupt(void);
+
 #endif
