@@ -1,8 +1,8 @@
-#include "types.h"
 #include "usb_desc.h"
 #include "usb_endp.h"
 #include <string.h>	// For memcpy()
 
+#include "ch554_platform.h"
 #include "usb_bot.h"
 
 // Used in SET_FEATURE and CLEAR_FEATURE 

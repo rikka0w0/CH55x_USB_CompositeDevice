@@ -1,7 +1,7 @@
 #ifndef __USB_DESC_H
 #define __USB_DESC_H
 
-#include "types.h"
+#include "ch554_platform.h"
 
 #define USB_INTERFACES 3
 

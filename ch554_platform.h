@@ -139,7 +139,9 @@
 
 
 
-
+#define GPIO1 0x90
+#define GPIO2 0xA0
+#define GPIO3 0xB0
 
 
 

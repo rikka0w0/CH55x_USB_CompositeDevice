@@ -1,5 +1,6 @@
-#include "types.h"
 #include "usb_endp.h"
+
+#include "ch554_platform.h"
 #include "usb_hid_keyboard.h"
 
 #define MAX_PACKET_SIZE 64

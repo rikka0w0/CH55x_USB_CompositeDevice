@@ -1,5 +1,5 @@
+#include "ch554_platform.h"
 #include "usb_desc.h"
-#include "types.h"
 
 // Language Descriptor
 code const uint8_t LangDesc[] = {

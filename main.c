@@ -1,10 +1,9 @@
-#include "types.h"
-
 #include "Delay.H"
 #include "usb_endp.h"
 #include "usb_hid_keyboard.h"
 
 #include <stdio.h>
+#include "ch554_platform.h"
 
 uint8_t keyState, kbdModifier, kbdKey;
 
@@ -17,10 +16,10 @@ void main(void) {
 	
     while(1) {
     	while(keyState == KBD_STATE_IDLE);
-		keyState = KBD_STATE_KEYDOWN;
+    	keyState = KBD_STATE_KEYDOWN;
     	USB_Keyboard_SendKey(kbdModifier, kbdKey);
-        while(keyState == KBD_STATE_KEYDOWN);
-        USB_Keyboard_SendKey(0, 0);
+    	while(keyState == KBD_STATE_KEYDOWN);
+    	USB_Keyboard_SendKey(0, 0);
     }
 }
 

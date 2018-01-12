@@ -1,6 +1,8 @@
 #include "usb_hid_keyboard.h"
 #include "usb_endp.h"
 
+// Send a USB HID keyboard report to host
+// For detailed format, check this out: https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
 void USB_Keyboard_SendKey(uint8_t modifier, uint8_t key) {
 	KBD_Tx_Buf[0] = modifier;
 	KBD_Tx_Buf[1] = 0;		// reserved

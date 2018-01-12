@@ -1,7 +1,7 @@
 #ifndef __USB_MAL_H
 #define __USB_MAL_H
 
-#include "types.h"
+#include "ch554_platform.h"
 
 #define MAL_MAX_LUN 0
 

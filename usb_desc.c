@@ -1,5 +1,6 @@
 #include "usb_desc.h"
-#include "types.h"
+
+#include "ch554_platform.h"
 
 // Device Descriptor
 code const uint8_t DevDesc[] = {	

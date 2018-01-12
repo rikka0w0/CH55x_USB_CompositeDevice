@@ -1,7 +1,7 @@
 #ifndef __I2C_EEPROM_H
 #define __I2C_EEPROM_H
 
-#include "types.h"
+#include "ch554_platform.h"
 
 #define EEPROM_SIZE 65536			//Capacity 64KiB
 #define EEPROM_SECTORSIZE 512	//Sector Size 512B

@@ -1,7 +1,7 @@
 #ifndef __USB_ENDP_H
 #define __USB_ENDP_H
 
-#include "types.h"
+#include "ch554_platform.h"
 uint8_t USB_EP_HALT_SET(uint8_t ep);
 uint8_t USB_EP_HALT_CLEAR(uint8_t ep);
 

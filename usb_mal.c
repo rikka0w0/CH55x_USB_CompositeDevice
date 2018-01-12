@@ -60,7 +60,7 @@ void LUN_Write (uint8_t lun, uint32_t curAddr) {
 	}
 }
 
-SBIT(ledEject,	0x90, 0);
+SBIT(ledEject,	GPIO1, 0);
 void LUN_Eject (uint8_t lun) {
 	if (lun == 0) {
 		EEPROM_Status = MAL_FAIL;

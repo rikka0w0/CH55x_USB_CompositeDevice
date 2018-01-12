@@ -29,10 +29,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usb_scsi.h"
 #include "usb_bot.h"
+
+#include "ch554_platform.h"
 #include "usb_mal.h"
 
 #include "usb_endp.h"
-#include "types.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/

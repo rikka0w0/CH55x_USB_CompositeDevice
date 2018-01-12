@@ -1,5 +1,5 @@
-#include "types.h"
 #include "i2c.h"
+#include "ch554_platform.h"
 
 xdata uint8_t I2C_Buf;
 

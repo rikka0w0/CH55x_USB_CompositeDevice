@@ -1,6 +1,5 @@
 #include "Delay.H"
-#include "types.h"
-#include "ch554_conf.H"  
+#include "ch554_platform.h"
 
 #include "usb_desc.h"
 #include "usb_endp.h"

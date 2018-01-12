@@ -32,14 +32,13 @@
 #include "usb_mal.h"
 
 #include "eeprom.h"
-
+#include "ch554_platform.h"
 #include "usb_endp.h"
-#include "types.h"
 
-SBIT(led,	0x90, 1);
+SBIT(ledRW, GPIO1, 1);
 /* Private typedef -----------------------------------------------------------*/
-#define RW_LED_ON() led=0
-#define RW_LED_OFF() led=1
+#define RW_LED_ON() ledRW=0
+#define RW_LED_OFF() ledRW=1
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/

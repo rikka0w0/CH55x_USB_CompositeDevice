@@ -1,7 +1,7 @@
 #ifndef __I2C_H
 #define __I2C_H
 
-#include "types.h"
+#include "ch554_platform.h"
 
 extern xdata uint8_t I2C_Buf;
 

@@ -1,5 +1,5 @@
+#include "ch554_platform.h"
 #include "usb_desc.h"
-#include "types.h"
 
 code const uint8_t KeyRepDesc[] = {
     0x05,0x01,0x09,0x06,0xA1,0x01,0x05,0x07,

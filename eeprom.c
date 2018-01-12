@@ -1,4 +1,4 @@
-#include "types.h"
+#include "ch554_platform.h"
 #include "i2c.h"
 
 // For 24LC512, A0=0, A1=0, A2=0, WP=Floating

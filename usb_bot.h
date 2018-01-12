@@ -31,9 +31,7 @@
 #define __USB_BOT_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "types.h"
-
-// BOT_USB Config
+#include "ch554_platform.h"
 #include "usb_endp.h"
 #define BOT_Rx_Buf EP3_RX_BUF
 #define BOT_Tx_Buf EP3_TX_BUF
