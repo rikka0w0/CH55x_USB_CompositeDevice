@@ -7,10 +7,12 @@ This demo emulates a USB composite device, which has 3 interface available (本演
 
 Author(作者): Rikka0w0 (小六花)
 
-* CH554.H, Delay.C and Delay.h comes from official CH554 demo (WCH), the USB MSD implementation is inspired by the USB MSD demo for STM32 (ST). 
-(CH554.H, Delay.C和Delay.h是从WCH官方的示例代码里提取的，U盘部分程序参考了STM32的USB MSD示例)
-* Compiler/IDE: Keil uVersion. (编译器/开发环境：Keil 礦ision)
-* SDCC will be supported in the near future. (以后会支持SDCC编译器)
+* `keilc51\CH554.H`, `Delay.C` and `Delay.h` comes from official CH554 demo (WCH), the USB MSD implementation is inspired by the USB MSD demo for STM32 (ST). 
+(`keilc51\CH554.H`, `Delay.C`和`Delay.h`是从WCH官方的示例代码里提取的，U盘部分程序参考了STM32的USB MSD示例)
+* All file in folder `includes` comes from Github repository [Blinkinlabs's ch554_sdcc](https://github.com/Blinkinlabs/ch554_sdcc).
+(`includes`文件夹中的文件是从[Blinkinlabs's ch554_sdcc](https://github.com/Blinkinlabs/ch554_sdcc)里复制的)
+* Compiler/IDE: Keil uVersion & SDCC. (编译器/开发环境：Keil 礦ision和SDCC)
+* A Wiki page describes how to setup SDCC on Windows and Linux. (Wiki中会介绍如何在Windows和Linux上搭建SDCC编译环境)
 * Feel free to use this demo as the template/start of a open-source or non-commercial project, modifying source code and republishing is allowed.
 (对于开源项目和非商业项目，可以是用本演示代码作为起点或者模板，作者允许修改并重新发布这份代码)
 * However you __MUST__ contact the author for permission prior to use this demo for commercial purposes.
@@ -31,12 +33,6 @@ Author(作者): Rikka0w0 (小六花)
 (Led2 通过1k电阻接在5V和P1.0之间，当大容量储存设备被弹出时点亮)
 
 # Capabilities(能做到什么):
-* The only difference between CH554 and CH552 is that, CH552 only supports USB device mode while CH554 can also be programmed as a Host. 
-So this demo may work on CH552 as well. (CH552只能作为USB的设备，而CH554还可以作为USB主机，这是两种芯片唯一的区别。因此本Demo可能也能在CH552上正常工作)
-* In this demo, __the I2C EEPROM is compolsory__, without it, the enumeration will not succeed. If you don't have the EEPROM, to get rid of it,
-comment out the EEPROM read and write operation in `LUN_Write` and `Lun_Read` in `usb_mal.c`.
-(这里的I2C的EEPROM是必须的，没有它设备会不能正常枚举，解决方法是在`usb_mal.c`注释掉`LUN_Write` 和 `Lun_Read`里面的读写操作)
-
 ## USB Mass Storage Device (USB大容量储存设备)
 * Emulate a 512Kib I2C EEPROM 24LC512 as a 64KB USB Drive
 (用512Kib的I2C总线EEPROM 24LC512模拟了一个64KB的U盘)
@@ -67,12 +63,19 @@ comment out the EEPROM read and write operation in `LUN_Write` and `Lun_Read` in
 # File Structure(文件结构):
 ## main.c
 * void main(void) {}
-* UART Rx handler (串口接收)
-* USB keyboard Tx controller (USB键盘的发送) 
+* USB Device Interrupt Entry(USB设备中断函数入口)
 ## Delay.c Delay.h
 * Delay (延时函数)
-## types.h
+## ch554_platform.h
 * Define uint8_t, uint32_t e.t.c (定义uint8_t, uint32_t等等标准类型)
+* Handle the difference between Keil C51 and SDCC
+(处理Keil C51和SDCC编译器之间的差异)
+* `U16B0` returns the lowest byte of a 16-bit integer, regardless of endian, similar defination for `U16B1`, `U32B0` e.t.c
+(`U16B0`会返回一个16位整数的低字节，与端无关，`U16B1`, `U32B0`等也是类似功能)
+* `U16_XBig` converts a big-endian 16-bit integer to fit the local endian, vise versa, similar defination for `U16_XLittle`, `U32_XBig` and `U32_XLittle`.
+(`U16_XBig`用于将一个大端储存的16位数转换成当前的端方式，也可以用于反向转换，`U16_XLittle`, `U32_XBig`和`U32_XLittle`的作用类似)
+* Instead of using `sbit led=P1^1`, use `SBIT(var, port, bin)` to declare a bit variable, for example, `SBIT(led, GPIO1, 1)`, this facilitates compilation under different compilers.
+(最好用`SBIT(var, port, bin)`来声明位变量，比如`SBIT(led, GPIO1, 1)`来代替`sbit led=P1^1`，这样有助于在不同编译器下编译程序)
 ## ch554_conf.c ch554_conf.h
 * Configure system clock (配置系统时钟)
 * Initialize USB Device (初始化USB设备)
@@ -119,6 +122,10 @@ comment out the EEPROM read and write operation in `LUN_Write` and `Lun_Read` in
 ## usb_string_desc.c
 * Define custom String Descriptors (定义自定义的字符描述符)
 * String Descriptor 0 is reserved for language configuration (0号字符描述符是为语言标识保留的)
+## usb_hid_keyboard.h
+* `USB_Keyboard_SendKey()` sends a key combination to the host, the first parameter specifies the modifier, e.g. KBD_LCTRL for left control, combination is supported, 
+the second parameter determines which key is pressed, e.g. 0x04 for letter a on keyboard. Check out [HID protocol](https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html) for details.
+(`USB_Keyboard_SendKey()`向主机发送一个按键组合，第一个参数定义了修饰符，比如KBD_LCTRL是左侧的CTRL键，这里支持组合。第二个参数决定了是哪个按键，比如0x04对应着键盘上的A。戳这里来补充[HID协议](https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html)姿势)
 ## usb_bot.h
 * Forward EndPoint IN/OUT buffer, abstract BOT layer behavior, see section `// BOT_USB Config`
 (转发端点的缓存的定义，抽象BOT层，参见`// BOT_USB Config`后面那部分)
@@ -154,7 +161,15 @@ comment out the EEPROM read and write operation in `LUN_Write` and `Lun_Read` in
 (定义`Inquiry Data`，包括厂商名产品名之类的)
 
 # Notes:
+* The only difference between CH554 and CH552 is that, CH552 only supports USB device mode while CH554 can also be programmed as a Host. 
+So this demo may work on CH552 as well. (CH552只能作为USB的设备，而CH554还可以作为USB主机，这是两种芯片唯一的区别。因此本Demo可能也能在CH552上正常工作)
+* In this demo, __the I2C EEPROM is compolsory__, without it, the enumeration will not succeed. If you don't have the EEPROM, to get rid of it,
+comment out the EEPROM read and write operation in `LUN_Write` and `Lun_Read` in `usb_mal.c`.
+(这里的I2C的EEPROM是必须的，没有它设备会不能正常枚举，解决方法是在`usb_mal.c`注释掉`LUN_Write` 和 `Lun_Read`里面的读写操作)
 * 8051 systems including CH554 is big-endian while x86 and ARM processors are little-endian.
 (8051系统包括CH554是大端存储的，即数据的高位放在低内存地址中，而x86和ARM处理器都是小端存储的)
 * USB packets are little-endian however the attached SCSI instructions are big-endian, keep this in mind!
 (USB包都是小端的然而包含的SCSI指令是大端的，特别需要注意！) 
+* SDCC requires that all interrupt service functions must be written inside the same .c file containing `void main(void)`, 
+otherwise SDCC can not find them. According to official SDCC documentation, it's not a bug but a feature. Keil C51 doesn't have this limitaion.
+(SDCC要求中断处理函数必须和main函数放在一个.c文件中，否则SDCC没办法找到这些函数。根据SDCC官方文档，这是一个特性不算Bug，Keil C51编译器没有这种限制)
