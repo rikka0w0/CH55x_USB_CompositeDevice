@@ -18,6 +18,10 @@ Author(作者): Rikka0w0 (小六花)
 * However you __MUST__ contact the author for permission prior to use this demo for commercial purposes.
 (__如果用于商业目的的话，必须提前得到作者的允许__)
 
+__BadApple.zip contains a funny demo which can play the BadApple video on a SDD1306 128x64 OLED screen, the OLED screen is controlled via I2C, 
+check out `I2c.c` for details about hardware configuration. (BadApple.zip包含一个有趣的演示，可以在SDD1306 128x64 OLED屏幕上播放BadApple视频，OLED屏幕通过I2C控制，在`I2c.c`中包含如何连接屏幕的信息)__
+
+
 # Hardware Setup(硬件配置):
 * The hardware is based on the minimal circuit setup of CH554
 (硬件基于CH554的最小系统)
@@ -159,6 +163,11 @@ the second parameter determines which key is pressed, e.g. 0x04 for letter a on 
 (实现所有在usb_mal.h里定义的函数)
 * Define `Inquiry Data`
 (定义`Inquiry Data`，包括厂商名产品名之类的)
+## Files in folder `OLDE` (OLED文件夹中的文件)
+* `sdd1306.h` and `sdd1306.c` provides functions to initialize SDD1306-based OLED screen and chunk programming the display pattern.
+(`sdd1306.h`和`sdd1306.c`提供了基于SDD1306的OLED屏幕的初始化和块编程显示模式的功能)
+* `sdd1306_ascii.h` and `sdd1306_ascii.c` provides functions to display ASCII characters on OLED screen.
+(`ssd1306 ascii.h`和`ssd1306 ascii.c`提供在OLED屏幕上显示ASCII字符的功能)
 
 # Notes:
 * The only difference between CH554 and CH552 is that, CH552 only supports USB device mode while CH554 can also be programmed as a Host. 
