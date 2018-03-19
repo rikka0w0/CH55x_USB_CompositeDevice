@@ -134,3 +134,16 @@ void CH554_Init(void) {
   
 	EA = 1;
 }
+
+void putchar(char c) {
+    while (!TI) /* assumes UART is initialized */
+    ;
+    TI = 0;
+    SBUF = c;
+}
+
+char getchar() {
+    while(!RI); /* assumes UART is initialized */
+    RI = 0;
+    return SBUF;
+}
