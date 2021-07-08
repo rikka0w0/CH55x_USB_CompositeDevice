@@ -5,7 +5,7 @@
 
 //#define CLOCK_FREQ_32
 //#define CLOCK_FREQ_24
-//#define CLOCK_FREQ_16
+#define CLOCK_FREQ_16
 //#define CLOCK_FREQ_12
 //#define CLOCK_FREQ_6
 //#define CLOCK_FREQ_3

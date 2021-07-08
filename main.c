@@ -1,7 +1,7 @@
-#include "Delay.H"
+#include "Delay.h"
 #include "usb_endp.h"
 #include "usb_hid_keyboard.h"
-
+#include "ch554_conf.h"
 #include <stdio.h>
 #include "ch554_platform.h"
 
@@ -13,7 +13,7 @@ void main(void) {
     printf("start ...\n");
 
     keyState = KBD_STATE_IDLE;
-	
+
     while(1) {
     	while(keyState == KBD_STATE_IDLE);
     	keyState = KBD_STATE_KEYDOWN;
@@ -31,4 +31,3 @@ void main(void) {
 void USBInterruptEntry(void) interrupt INT_NO_USB {
 	USBInterrupt();
 }
-

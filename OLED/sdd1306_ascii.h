@@ -1,7 +1,7 @@
 #ifndef __SDD1306_ASCII_H
 #define __SDD1306_ASCII_H
 
-#include "..\ch554_platform.h"
+#include "../ch554_platform.h"
 #include "sdd1306.h"
 
 void OLED_Set_Pos(uint8_t x, uint8_t y);

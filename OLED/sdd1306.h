@@ -1,8 +1,8 @@
 #ifndef __SDD1306_H
 #define __SDD1306_H
 
-#include "..\i2c.h"
-#include "..\ch554_platform.h"
+#include "../i2c.h"
+#include "../ch554_platform.h"
 
 #define OLED_I2C_ADDR 0x78
 // Uncomment the following macro to enable fast fill. but the code is larger
@@ -37,10 +37,10 @@ void OLED_Init(void);
 //   B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7
 //   b0 | b0 | b0 | b0 | b0 | b0 | b0 | b0
 //   b1 | b1 | b1 | b1 | b1 | b1 | b1 | b1
-//   b2 | b2 | b2 | b2 | b2 | b2 | b2 | b2 
+//   b2 | b2 | b2 | b2 | b2 | b2 | b2 | b2
 //   b3 | b3 | b3 | b3 | b3 | b3 | b3 | b3
 //   b4 | b4 | b4 | b4 | b4 | b4 | b4 | b4
-//   b5 | b5 | b5 | b5 | b5 | b5 | b5 | b5 
+//   b5 | b5 | b5 | b5 | b5 | b5 | b5 | b5
 //   b6 | b6 | b6 | b6 | b6 | b6 | b6 | b6
 //   b7 | b7 | b7 | b7 | b7 | b7 | b7 | b7 (right bottom)
 // Chunk programming is faster than segment programming

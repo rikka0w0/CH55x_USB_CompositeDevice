@@ -3,7 +3,7 @@
 
 #include "ch554_platform.h"
 
-void	mDelayuS(uint16_t n );
-void	mDelaymS(uint16_t n );
+void mDelayuS(unsigned short n );
+void mDelaymS(unsigned short n );
 
 #endif
